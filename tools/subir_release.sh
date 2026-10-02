@@ -24,10 +24,12 @@ else
 fi
 git push origin "$TAG"
 
-# Release con el zip.
+# Release con los zips (Windows siempre; Linux si se exportó).
 if command -v gh >/dev/null 2>&1; then
   echo "-- Creando release $TAG en GitHub..."
-  gh release create "$TAG" "$ZIP" --title "Semaphorer $TAG" --notes "$NOTAS"
+  ZIPS=("$ZIP")
+  [ -f "build/Semaphorer-linux-v$VER.zip" ] && ZIPS+=("build/Semaphorer-linux-v$VER.zip")
+  gh release create "$TAG" "${ZIPS[@]}" --title "Semaphorer $TAG" --notes "$NOTAS"
   echo "LISTO: https://github.com/bialyLT/semaphorer/releases/tag/$TAG"
 else
   echo ""

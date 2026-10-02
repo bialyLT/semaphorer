@@ -10,7 +10,9 @@ Hecho con Godot 4 (.NET / C#), todo procedural por código.
 
 Última versión para Windows en
 [Releases](https://github.com/bialyLT/semaphorer/releases): descomprimí el zip
-y doble-click a `Semaphorer.exe` (no necesita instalación).
+y doble-click a `Semaphorer.exe` (no necesita instalación). Novedades,
+historial y todas las descargas en la
+[web del juego](https://bialyLT.github.io/semaphorer-web).
 
 ## Cómo se juega
 
