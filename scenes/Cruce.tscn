@@ -1,0 +1,160 @@
+[gd_scene load_steps=21 format=3]
+
+[ext_resource type="Script" path="res://scripts/Core/GameManager.cs" id="1"]
+[ext_resource type="Script" path="res://scripts/World/ProcCalle.cs" id="2"]
+[ext_resource type="Script" path="res://scripts/Traffic/TrafficLight.cs" id="3"]
+[ext_resource type="Script" path="res://scripts/Traffic/CarSpawner.cs" id="4"]
+[ext_resource type="Script" path="res://scripts/Player/Player.cs" id="5"]
+[ext_resource type="Script" path="res://scripts/Player/CameraRig.cs" id="6"]
+[ext_resource type="Script" path="res://scripts/Work/WindshieldJob.cs" id="7"]
+[ext_resource type="Script" path="res://scripts/Economy/Economy.cs" id="8"]
+[ext_resource type="Script" path="res://scripts/Audio/AudioManager.cs" id="9"]
+[ext_resource type="Script" path="res://scripts/UI/HUD.cs" id="10"]
+[ext_resource type="Script" path="res://scripts/Economy/Mejoras.cs" id="11"]
+[ext_resource type="Script" path="res://scripts/Economy/Inventario.cs" id="12"]
+[ext_resource type="Script" path="res://scripts/World/ProcEdificios.cs" id="13"]
+[ext_resource type="Script" path="res://scripts/World/ProcProps.cs" id="14"]
+[ext_resource type="Script" path="res://scripts/Traffic/PatrolAI.cs" id="15"]
+[ext_resource type="Script" path="res://scripts/UI/Pausa.cs" id="16"]
+
+[sub_resource type="CapsuleShape3D" id="CapsuleShape"]
+radius = 0.4
+height = 1.7
+
+[sub_resource type="CapsuleMesh" id="CapsuleMesh"]
+radius = 0.4
+height = 1.7
+
+[sub_resource type="ProceduralSkyMaterial" id="SkyMat"]
+sky_top_color = Color(0.25, 0.5, 0.9, 1)
+sky_horizon_color = Color(0.7, 0.85, 0.95, 1)
+ground_bottom_color = Color(0.25, 0.25, 0.26, 1)
+ground_horizon_color = Color(0.6, 0.65, 0.7, 1)
+
+[sub_resource type="Sky" id="Sky"]
+sky_material = SubResource("SkyMat")
+
+[sub_resource type="Environment" id="Env"]
+background_mode = 2
+sky = SubResource("Sky")
+ambient_light_source = 2
+ambient_light_color = Color(0.72, 0.77, 0.82, 1)
+ambient_light_energy = 1.0
+
+[node name="Cruce" type="Node3D"]
+script = ExtResource("1")
+Semaforo = NodePath("Semaforo")
+Semaforo2 = NodePath("Semaforo2")
+Semaforo3 = NodePath("Semaforo3")
+Semaforo4 = NodePath("Semaforo4")
+Economia = NodePath("Economy")
+Hud = NodePath("HUD")
+Patrulla = NodePath("CarSpawner/Patrulla")
+
+[node name="World" type="Node3D" parent="."]
+script = ExtResource("2")
+
+[node name="Edificios" type="Node3D" parent="."]
+script = ExtResource("13")
+
+[node name="Props" type="Node3D" parent="."]
+script = ExtResource("14")
+
+[node name="Semaforo" type="Node3D" parent="."]
+script = ExtResource("3")
+
+[node name="Semaforo2" type="Node3D" parent="."]
+script = ExtResource("3")
+
+[node name="Semaforo3" type="Node3D" parent="."]
+script = ExtResource("3")
+
+[node name="Semaforo4" type="Node3D" parent="."]
+script = ExtResource("3")
+
+[node name="CarSpawner" type="Node3D" parent="."]
+script = ExtResource("4")
+Semaforo = NodePath("../Semaforo")
+Semaforo2 = NodePath("../Semaforo2")
+Semaforo3 = NodePath("../Semaforo3")
+Semaforo4 = NodePath("../Semaforo4")
+Velocidad = 6.0
+Jugador = NodePath("../Player")
+Audio = NodePath("../Audio")
+Mejoras = NodePath("../Mejoras")
+
+[node name="Player" type="CharacterBody3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 5, 0.5, -8)
+script = ExtResource("5")
+Velocidad = 5.0
+Rig = NodePath("CameraRig")
+Trabajo = NodePath("WindshieldJob")
+Hud = NodePath("../HUD")
+Mejoras = NodePath("../Mejoras")
+Inventario = NodePath("../Inventario")
+Economia = NodePath("../Economy")
+Pausa = NodePath("../Pausa")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Player"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.9, 0)
+shape = SubResource("CapsuleShape")
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="Player"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.9, 0)
+mesh = SubResource("CapsuleMesh")
+
+[node name="CameraRig" type="Node3D" parent="Player"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.6, 0)
+script = ExtResource("6")
+
+[node name="Camera3D" type="Camera3D" parent="Player/CameraRig"]
+current = true
+fov = 70.0
+
+[node name="WindshieldJob" type="Node" parent="Player"]
+script = ExtResource("7")
+Semaforo = NodePath("../../Semaforo")
+Semaforo2 = NodePath("../../Semaforo2")
+Semaforo3 = NodePath("../../Semaforo3")
+Semaforo4 = NodePath("../../Semaforo4")
+Spawner = NodePath("../../CarSpawner")
+Economia = NodePath("../../Economy")
+Audio = NodePath("../../Audio")
+Mejoras = NodePath("../../Mejoras")
+
+[node name="Economy" type="Node" parent="."]
+script = ExtResource("8")
+
+[node name="Inventario" type="Node" parent="."]
+script = ExtResource("12")
+Economia = NodePath("../Economy")
+
+[node name="Audio" type="Node3D" parent="."]
+script = ExtResource("9")
+
+[node name="Sun" type="DirectionalLight3D" parent="."]
+transform = Transform3D(0.866025, -0.353553, 0.353553, 0, 0.707107, 0.707107, -0.5, -0.612372, 0.612372, 0, 10, 0)
+light_energy = 1.15
+shadow_enabled = true
+
+[node name="Relleno" type="DirectionalLight3D" parent="."]
+transform = Transform3D(-0.866025, -0.353553, -0.353553, 0, 0.707107, -0.707107, 0.5, -0.612372, -0.612372, 0, 10, 0)
+light_energy = 0.35
+light_color = Color(0.85, 0.9, 1, 1)
+
+[node name="WorldEnvironment" type="WorldEnvironment" parent="."]
+environment = SubResource("Env")
+
+[node name="HUD" type="CanvasLayer" parent="."]
+script = ExtResource("10")
+
+[node name="Mejoras" type="CanvasLayer" parent="."]
+script = ExtResource("11")
+Economia = NodePath("../Economy")
+Inventario = NodePath("../Inventario")
+Hud = NodePath("../HUD")
+Audio = NodePath("../Audio")
+
+[node name="Pausa" type="CanvasLayer" parent="."]
+script = ExtResource("16")
+Economia = NodePath("../Economy")

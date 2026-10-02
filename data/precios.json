@@ -1,0 +1,266 @@
+{
+  "tienda": {
+    "items": [
+      {
+        "id": "esponja",
+        "nombre": "Esponja",
+        "rama": "EQUIPO",
+        "desc": "Cada toque de E vale más",
+        "niveles": [
+          {
+            "precio": 30,
+            "valor": 2,
+            "efecto": "Toque x2"
+          },
+          {
+            "precio": 80,
+            "valor": 3,
+            "efecto": "Toque x3"
+          },
+          {
+            "precio": 180,
+            "valor": 4,
+            "efecto": "Toque x4"
+          }
+        ],
+        "oficios": [
+          "limpiavidrios"
+        ]
+      },
+      {
+        "id": "balde",
+        "nombre": "Balde con agua",
+        "rama": "EQUIPO",
+        "desc": "+$ por cada servicio cobrado",
+        "niveles": [
+          {
+            "precio": 50,
+            "valor": 3,
+            "efecto": "+$3 por servicio"
+          },
+          {
+            "precio": 110,
+            "valor": 6,
+            "efecto": "+$6 por servicio"
+          },
+          {
+            "precio": 200,
+            "valor": 10,
+            "efecto": "+$10 por servicio"
+          }
+        ],
+        "oficios": [
+          "limpiavidrios"
+        ]
+      },
+      {
+        "id": "pelotas",
+        "nombre": "Pelotas pro",
+        "rama": "EQUIPO",
+        "desc": "Cada acto de malabares vale más",
+        "niveles": [
+          {
+            "precio": 35,
+            "valor": 2,
+            "efecto": "Acto x2"
+          },
+          {
+            "precio": 90,
+            "valor": 3,
+            "efecto": "Acto x3"
+          }
+        ],
+        "oficios": [
+          "malabarista"
+        ]
+      },
+      {
+        "id": "zapas",
+        "nombre": "Zapas nuevas",
+        "rama": "CALLE",
+        "desc": "Más velocidad de movimiento",
+        "niveles": [
+          {
+            "precio": 40,
+            "valor": 20,
+            "efecto": "+20% velocidad"
+          },
+          {
+            "precio": 90,
+            "valor": 35,
+            "efecto": "+35% velocidad"
+          },
+          {
+            "precio": 160,
+            "valor": 50,
+            "efecto": "+50% velocidad"
+          }
+        ]
+      },
+      {
+        "id": "chamuyo",
+        "nombre": "Labia",
+        "rama": "CALLE",
+        "desc": "Conductores más pacientes",
+        "niveles": [
+          {
+            "precio": 60,
+            "valor": 4,
+            "efecto": "Apurados +4s, changüí +2s"
+          },
+          {
+            "precio": 130,
+            "valor": 8,
+            "efecto": "Apurados +8s, changüí +4s"
+          },
+          {
+            "precio": 250,
+            "valor": 12,
+            "efecto": "Apurados +12s, changüí +6s, enojados casi siempre pagan (-80% rechazo)",
+            "extra": "sin_rechazo"
+          }
+        ]
+      },
+      {
+        "id": "pregon",
+        "nombre": "Pregón",
+        "rama": "CALLE",
+        "desc": "Propinas más generosas (malabares y venta)",
+        "niveles": [
+          {
+            "precio": 50,
+            "valor": 2,
+            "efecto": "+$2 propina"
+          },
+          {
+            "precio": 110,
+            "valor": 4,
+            "efecto": "+$4 propina"
+          },
+          {
+            "precio": 200,
+            "valor": 6,
+            "efecto": "+$6 propina"
+          }
+        ],
+        "oficios": [
+          "malabarista",
+          "vendedor"
+        ]
+      },
+      {
+        "id": "tarifa",
+        "nombre": "Tarifa",
+        "rama": "NEGOCIO",
+        "desc": "Cobrás más por cada parabrisas",
+        "niveles": [
+          {
+            "precio": 70,
+            "valor": 2,
+            "efecto": "+$2 por servicio",
+            "req_id": "esponja",
+            "req_nivel": 1
+          },
+          {
+            "precio": 150,
+            "valor": 4,
+            "efecto": "+$4 por servicio",
+            "req_id": "esponja",
+            "req_nivel": 2
+          },
+          {
+            "precio": 260,
+            "valor": 7,
+            "efecto": "+$7 por servicio",
+            "req_id": "balde",
+            "req_nivel": 1
+          }
+        ],
+        "oficios": [
+          "limpiavidrios"
+        ]
+      },
+      {
+        "id": "trafico",
+        "nombre": "Tráfico",
+        "rama": "NEGOCIO",
+        "desc": "Más autos paran en tu semáforo",
+        "niveles": [
+          {
+            "precio": 100,
+            "valor": 1,
+            "efecto": "+1 auto en el cruce",
+            "req_id": "chamuyo",
+            "req_nivel": 1
+          },
+          {
+            "precio": 220,
+            "valor": 2,
+            "efecto": "+2 autos en el cruce",
+            "req_id": "chamuyo",
+            "req_nivel": 2
+          }
+        ]
+      },
+      {
+        "id": "sigilo",
+        "nombre": "Sigilo",
+        "rama": "NEGOCIO",
+        "desc": "La policía te ve de más lejos... o no",
+        "niveles": [
+          {
+            "precio": 80,
+            "valor": 20,
+            "efecto": "-20% visión policial",
+            "req_id": "zapas",
+            "req_nivel": 1
+          },
+          {
+            "precio": 170,
+            "valor": 35,
+            "efecto": "-35% visión policial",
+            "req_id": "chamuyo",
+            "req_nivel": 1
+          },
+          {
+            "precio": 300,
+            "valor": 50,
+            "efecto": "-50% visión policial",
+            "req_id": "chamuyo",
+            "req_nivel": 2
+          }
+        ]
+      },
+      {
+        "id": "canasta",
+        "nombre": "Canasta grande",
+        "rama": "NEGOCIO",
+        "desc": "+$ por cada venta (vendedor)",
+        "niveles": [
+          {
+            "precio": 45,
+            "valor": 2,
+            "efecto": "+$2 por venta",
+            "req_id": "pregon",
+            "req_nivel": 1
+          },
+          {
+            "precio": 100,
+            "valor": 4,
+            "efecto": "+$4 por venta",
+            "req_id": "pregon",
+            "req_nivel": 2
+          }
+        ],
+        "oficios": [
+          "vendedor"
+        ]
+      }
+    ]
+  },
+  "servicios": {
+    "limpieza_base": 10,
+    "malabar_propina": 15,
+    "venta_dulce": 8
+  }
+}

@@ -1,0 +1,25 @@
+{
+  "ciudades": [
+    {
+      "id": 1,
+      "nombre": "Cruce Viejo",
+      "desc": "Tu semáforo de siempre. Acá empieza el sueño.",
+      "mult_pago": 1.0,
+      "precio_pasaje": 1500
+    },
+    {
+      "id": 2,
+      "nombre": "Avenida Nueva",
+      "desc": "Ciudad mejor: se paga mucho más, todo cuesta más.",
+      "mult_pago": 2.5,
+      "precio_pasaje": 3750
+    },
+    {
+      "id": 3,
+      "nombre": "La Capital",
+      "desc": "La última ciudad. Al completar todo vuelve el Tipo con la tirada final.",
+      "mult_pago": 5.0,
+      "precio_pasaje": 0
+    }
+  ]
+}

@@ -1,0 +1,29 @@
+# Binarios y build Godot .NET
+.godot/
+bin/
+obj/
+*.tmp
+*.godot.imported
+*.translation
+
+# Builds exportados
+build/
+exports/
+
+# Saves locales (no subir saves personales)
+# user:// va fuera del repo, nada que ignorar aqui salvo pruebas
+*.log
+
+# Tooling del agente (config local, no es parte del juego)
+.opencode/
+
+# Landing page (vive en su propio repo: semaphorer-web)
+landing-web/
+
+# OS / editores
+.DS_Store
+Thumbs.db
+.vs/
+.vscode/
+*.user
+*.suo

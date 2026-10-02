@@ -1,0 +1,103 @@
+{
+  "semaforo": {
+    "verde_seg": 19,
+    "amarillo_seg": 3,
+    "rojo_seg": 66
+  },
+  "limpiaparabrisas": {
+    "golpes_para_completar": 6,
+    "pago_base": 12,
+    "rango_interaccion": 4.5,
+    "ritmo_perfecto_min": 0.35,
+    "ritmo_perfecto_max": 0.9,
+    "ritmo_bien_max": 1.8,
+    "propina_perfecta": 6,
+    "propina_buena": 2,
+    "limite_apurado_seg": 14,
+    "prob_rechazo_enojado": 0.35,
+    "gracia_amable_seg": 4
+  },
+  "jugador": {
+    "velocidad": 5.0,
+    "sensibilidad_mouse": 0.003
+  },
+  "trafico": {
+    "velocidad_auto": 6.0,
+    "velocidad_patrulla": 7.0,
+    "distancia_frenado": 6.0,
+    "p_amable": 0.5,
+    "p_apurado": 0.3,
+    "distancia_bocina_m": 4.5,
+    "gap_antisolape_m": 6.0
+  },
+  "peatones": {
+    "cantidad": 6,
+    "nodos_ruta": 5,
+    "velocidad": 1.6,
+    "velocidad_cruzando": 1.9,
+    "velocidad_apurado": 3.2,
+    "mirar_antes_seg": 1.2,
+    "mirar_periodo_seg": 2.5,
+    "paciencia_max_seg": 20.0,
+    "margen_auto_m": 2.5
+  },
+  "ladrones": {
+    "prob_ladron": 0.3,
+    "radio_acecho_m": 4.5,
+    "tiempo_robo_seg": 10.0,
+    "tiempo_perdon_seg": 3.5,
+    "max_activos": 1,
+    "fraccion_robo_max": 0.5,
+    "ventana_recuperacion_seg": 8.0,
+    "radio_recuperacion_m": 2.0,
+    "radio_espanto_m": 4.0
+  },
+  "escondite": {
+    "x": 5.0,
+    "z": 5.5,
+    "radio_m": 3.0
+  },
+  "policia": {
+    "velocidad": 7.0,
+    "radio_vision": 30.0,
+    "decaimiento": 6.0,
+    "ritmo_base": 15.0,
+    "tolerancia_seg": 32.0
+  },
+  "dia_noche": {
+    "duracion_dia_seg": 360.0,
+    "hora_inicial": 9.0
+  },
+  "clima": {
+    "prob_lluvia": 0.3,
+    "duracion_min_seg": 60.0,
+    "duracion_max_seg": 150.0,
+    "propina_extra_lluvia": 2
+  },
+  "malabares": {
+    "actos_para_funcion": 5,
+    "pago_base": 12,
+    "rango_interaccion": 4.5,
+    "ritmo_perfecto_min": 0.3,
+    "ritmo_perfecto_max": 0.8,
+    "ritmo_bien_max": 1.6,
+    "propina_perfecta": 6,
+    "propina_buena": 3,
+    "limite_apurado_seg": 12,
+    "prob_rechazo_enojado": 0.3,
+    "gracia_amable_seg": 4
+  },
+  "venta": {
+    "ofertas_para_venta": 3,
+    "pago_base": 9,
+    "rango_interaccion": 4.5,
+    "ritmo_perfecto_min": 0.4,
+    "ritmo_perfecto_max": 1.0,
+    "ritmo_bien_max": 2.0,
+    "propina_perfecta": 4,
+    "propina_buena": 2,
+    "limite_apurado_seg": 16,
+    "prob_rechazo_enojado": 0.25,
+    "gracia_amable_seg": 4
+  }
+}

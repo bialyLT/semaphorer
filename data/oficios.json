@@ -1,0 +1,25 @@
+{
+  "oficios": [
+    {
+      "id": "limpiavidrios",
+      "nombre": "Limpiavidrios",
+      "desc": "Botella con detergente y limpiavidrios. El camino ya construido.",
+      "plata_inicial": 50,
+      "kit": ["botella_detergente", "limpiavidrios"]
+    },
+    {
+      "id": "malabarista",
+      "nombre": "Malabarista",
+      "desc": "3 pelotas de tenis. Futuro camino de malabares en el semáforo.",
+      "plata_inicial": 50,
+      "kit": ["pelota_tenis", "pelota_tenis", "pelota_tenis"]
+    },
+    {
+      "id": "vendedor",
+      "nombre": "Vendedor ambulante",
+      "desc": "Un palo y verduras para empezar (limones y morrones). Futuro camino de venta.",
+      "plata_inicial": 50,
+      "kit": ["palo", "limones", "morrones"]
+    }
+  ]
+}
