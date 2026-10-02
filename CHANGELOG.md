@@ -3,6 +3,23 @@
 Formato: Keep a Changelog. Versiones: SemVer (`MAJOR.MINOR.PATCH`).
 Ver skill `versionado` para las reglas de bump de este proyecto.
 
+## [1.3.1] - 2026-10-02
+
+### Fixed
+- Cinemática intro: ahora se ve al protagonista tirado en la vereda y al
+  tipo de oscuro que llega caminando hasta frenar al lado. Ya no aparece
+  el limpiavidrios flotante (era el viewmodel de la cámara vieja) ni falta
+  el cuerpo (en 1ª persona está oculto): el Player real se oculta y se usan
+  dummies sin herramientas. HUD oculto durante el plano.
+
+## [1.3.0] - 2026-10-02
+
+### Added
+- Cinemática intro básica en partidas nuevas: travelling de cámara en 3
+  planos sobre el cruce + subtítulos ("apuestas / calle / última tirada"),
+  con letterbox, fundido y typewriter. Skipeable con Esc/Espacio/Enter/click
+  y cierra en la ruleta de la suerte como plano final.
+
 ## [1.2.0] - 2026-10-02
 
 ### Added

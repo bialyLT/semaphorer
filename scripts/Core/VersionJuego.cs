@@ -1,9 +1,9 @@
 /// <summary>
 /// Versión visible del juego (menú + pausa + project.godot + export).
-/// 1.2.0: música de fondo (menú tranquilo + partida con ritmo, loops
-/// sintetizados reemplazables) y loops reales de ambiente/lluvia.
+/// 1.3.1: fix cinemática intro (protagonista tirado + tipo que llega;
+/// ya no se ve el viewmodel flotante ni falta el cuerpo en 1ª persona).
 /// </summary>
 public static class VersionJuego
 {
-	public const string Actual = "1.2.0";
+	public const string Actual = "1.3.1";
 }

@@ -28,6 +28,7 @@ public partial class GameManager : Node3D
 
 	TutorialUI? tutorial;
 	HistoriaUI? historia;
+	IntroCinematica? intro;
 
 	public override void _Ready()
 	{
@@ -104,13 +105,29 @@ public partial class GameManager : Node3D
 		}
 		if (!SaveSystem.CargarPrologoVisto())
 		{
-			historia = new HistoriaUI();
-			AddChild(historia);
-			historia.Terminada += OnHistoriaTerminada;
-			historia.Mostrar();
+			// Fase cinemática básica: travelling + subtítulos y después
+			// la ruleta de HistoriaUI como plano final (skipeable con Esc).
+			intro = new IntroCinematica();
+			AddChild(intro);
+			intro.Terminada += OnIntroTerminada;
+			intro.Mostrar();
 			return;
 		}
 		MostrarTutorialSiToca();
+	}
+
+	/// <summary>Terminó la cinemática: recién ahí se muestra la tirada.</summary>
+	void OnIntroTerminada()
+	{
+		if (intro != null)
+		{
+			intro.Terminada -= OnIntroTerminada;
+			intro = null;
+		}
+		historia = new HistoriaUI();
+		AddChild(historia);
+		historia.Terminada += OnHistoriaTerminada;
+		historia.Mostrar();
 	}
 
 	/// <summary>La tirada terminó: plata inicial del oficio, guardado y a laburar.</summary>
@@ -391,6 +408,7 @@ public partial class GameManager : Node3D
 		}
 		if (clima != null) clima.ClimaCambiado -= OnClimaReloj;
 		if (historia != null) historia.Terminada -= OnHistoriaTerminada;
+		if (intro != null) intro.Terminada -= OnIntroTerminada;
 	}
 
 	public override void _Process(double delta)
