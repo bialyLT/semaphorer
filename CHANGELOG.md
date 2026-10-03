@@ -3,14 +3,40 @@
 Formato: Keep a Changelog. Versiones: SemVer (`MAJOR.MINOR.PATCH`).
 Ver skill `versionado` para las reglas de bump de este proyecto.
 
-## [1.3.1] - 2026-10-02
+## [1.5.4] - 2026-10-03
 
 ### Fixed
-- Cinemática intro: ahora se ve al protagonista tirado en la vereda y al
-  tipo de oscuro que llega caminando hasta frenar al lado. Ya no aparece
-  el limpiavidrios flotante (era el viewmodel de la cámara vieja) ni falta
-  el cuerpo (en 1ª persona está oculto): el Player real se oculta y se usan
-  dummies sin herramientas. HUD oculto durante el plano.
+- Ya no podés caerte del mundo.
+
+## [1.5.3] - 2026-10-03
+
+### Fixed
+- Los peatones ya no se enciman al caminar.
+
+## [1.5.2] - 2026-10-03
+
+### Fixed
+- Las cinemáticas ahora se ven sin objetos delante de los personajes.
+
+## [1.5.1] - 2026-10-03
+
+### Changed
+- Cambio en diálogos de la cinemática final.
+
+## [1.5.0] - 2026-10-03
+
+### Added
+- Se agregaron las cinemáticas del final del juego.
+
+## [1.4.0] - 2026-10-03
+
+### Added
+- Se agregó una cinemática cada vez que viajás a una nueva ciudad.
+
+## [1.3.1] - 2026-10-02
+
+### Added
+- Se agregó una nueva cinemática en la intro del juego.
 
 ## [1.3.0] - 2026-10-02
 

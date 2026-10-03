@@ -51,6 +51,28 @@ public partial class ProcCalle : Node3D
 			AgregarCaja($"GuionEO{i}", new Vector3(1.6f, 0.24f, 0.25f), new Vector3(i * 5f, 0.01f, 0), new Color(0.9f, 0.8f, 0.2f), false);
 		}
 		ConstruirEscondite();
+		ConstruirLimites();
+	}
+
+	/// <summary>
+	/// Muros invisibles en el borde del mundo jugable (±18): el jugador no
+	/// puede caerse al vacío. Capa 4 solo para el jugador (los autos y
+	/// peatones se mueven por posición, y el rayo del ladrón usa máscara 1:
+	/// nada de eso los ve). Sin malla = invisibles.
+	/// </summary>
+	void ConstruirLimites()
+	{
+		Limite("LimiteE", new Vector3(0.5f, 6f, 37f), new Vector3(18f, 2f, 0), this);
+		Limite("LimiteO", new Vector3(0.5f, 6f, 37f), new Vector3(-18f, 2f, 0), this);
+		Limite("LimiteN", new Vector3(37f, 6f, 0.5f), new Vector3(0, 2f, 18f), this);
+		Limite("LimiteS", new Vector3(37f, 6f, 0.5f), new Vector3(0, 2f, -18f), this);
+	}
+
+	static void Limite(string nombre, Vector3 tam, Vector3 pos, Node3D padre)
+	{
+		var body = new StaticBody3D { Name = nombre, CollisionLayer = 4, CollisionMask = 0 };
+		body.AddChild(new CollisionShape3D { Shape = new BoxShape3D { Size = tam }, Position = pos });
+		padre.AddChild(body);
 	}
 
 	/// <summary>

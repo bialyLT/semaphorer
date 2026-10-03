@@ -1,9 +1,8 @@
 /// <summary>
 /// Versión visible del juego (menú + pausa + project.godot + export).
-/// 1.3.1: fix cinemática intro (protagonista tirado + tipo que llega;
-/// ya no se ve el viewmodel flotante ni falta el cuerpo en 1ª persona).
+/// 1.5.4: muros invisibles en el borde (ya no se cae del mundo).
 /// </summary>
 public static class VersionJuego
 {
-	public const string Actual = "1.3.1";
+	public const string Actual = "1.5.4";
 }

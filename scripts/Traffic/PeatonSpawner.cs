@@ -126,8 +126,9 @@ public partial class PeatonSpawner : Node3D
 			var inicio = Peaton.NodoEn(ruta[0]);
 			var segundo = Peaton.NodoEn(ruta[1]);
 			if (inicio == null || segundo == null) return;
-		// Que no nazcan encima de otro peatón.
+		// Que no nazcan encima de otro peatón (ni yendo al mismo punto).
 		if (Ocupado(inicio.Pos)) continue;
+		if (Ocupado(segundo.Pos, 1f)) continue;
 		bool esLadron = ContarLadrones() < MaxLadrones &&
 			(ForzarLadronInicial || rng.Randf() < ProbLadron);
 		if (ForzarLadronInicial && esLadron) ForzarLadronInicial = false;
@@ -192,12 +193,12 @@ public partial class PeatonSpawner : Node3D
 		}
 	}
 
-	bool Ocupado(Vector3 pos)
+	bool Ocupado(Vector3 pos, float radio = 1.5f)
 	{
 		foreach (var p in peatos)
 		{
 			if (!IsInstanceValid(p)) continue;
-			if (p.Position.DistanceTo(pos) < 1.5f) return true;
+			if (p.Position.DistanceTo(pos) < radio) return true;
 		}
 		return false;
 	}

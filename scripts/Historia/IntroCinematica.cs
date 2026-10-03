@@ -108,12 +108,10 @@ public partial class IntroCinematica : CanvasLayer
 		// vieja quedaria flotando ante la cine-cam ("limpiavidrios puesto").
 		jugadorReal = raiz?.GetNodeOrNull<Node3D>("Player");
 		if (jugadorReal == null) jugadorReal = GetTree()?.CurrentScene?.GetNodeOrNull<Node3D>("Player");
-		if (jugadorReal != null)
-		{
-			posSuelo = jugadorReal.GlobalPosition;
-			posSuelo.Y = ProcPeaton.YVereda;
-			jugadorReal.Visible = false;
-		}
+		if (jugadorReal != null) jugadorReal.Visible = false;
+		// Set FIJO verificado (CineSet): encuadrar donde esté el jugador
+		// es lotería (árboles/pórticos tapan según la posición).
+		posSuelo = CineSet.Foco;
 		// Ocultar HUD para que no tape el plano ($0, objetivos, etc.).
 		hudReal = raiz?.GetNodeOrNull<CanvasLayer>("HUD");
 		if (hudReal != null && hudReal.Visible) hudReal.Visible = false;
@@ -161,8 +159,9 @@ public partial class IntroCinematica : CanvasLayer
 			new Color(0.8f, 0.58f, 0.42f),
 			true, new Color(0.05f, 0.05f, 0.07f));
 		tipo.Name = "CineTipo";
-		posTipoFin = posSuelo + new Vector3(-1.7f, 0, 1.3f);
-		posTipoInicio = posSuelo + new Vector3(-6.5f, 0, 4.5f);
+		// Recorrido dentro del parche despejado (nunca a la calle).
+		posTipoFin = posSuelo + new Vector3(-1.6f, 0, 1.2f);
+		posTipoInicio = posSuelo + new Vector3(-2.5f, 0, 3.0f);
 		raiz.AddChild(tipo);
 		tipo.GlobalPosition = new Vector3(posTipoInicio.X, ProcPeaton.YVereda, posTipoInicio.Z);
 		MirarA(tipo, posSuelo);

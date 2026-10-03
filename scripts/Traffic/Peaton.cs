@@ -144,6 +144,8 @@ public partial class Peaton : Node3D
 
 	public override void _Ready()
 	{
+		// Grupo para la separación entre peatones (incluye Ladron: llama a base).
+		if (!IsInGroup("peaton")) AddToGroup("peaton");
 		var visual = ProcPeaton.Build(Ropa, Pantalon, Piel, Gorro);
 		AddChild(visual);
 		cuerpo = visual.GetNodeOrNull<Node3D>("Cuerpo");
@@ -199,6 +201,8 @@ public partial class Peaton : Node3D
 	{
 		mirado += d;
 		espera += d;
+		// Esperando también se respeta el espacio (se corre al costado).
+		Position += SeparacionLateral(Frente()) * d;
 		if (mirado >= MirarPeriodoSeg)
 		{
 			mirado = 0;
@@ -281,7 +285,9 @@ public partial class Peaton : Node3D
 		dir.Y = 0;
 		if (dir.LengthSquared() < 0.0001f) return;
 		dir = dir.Normalized();
-		Position += dir * v * d;
+		// No camina ADENTRO del de adelante: afloja (efecto fila india).
+		float paso = BloqueadoAdelante(dir) ? 0.35f : 1f;
+		Position += dir * v * paso * d + SeparacionLateral(dir) * d;
 		// Sube/baja del cordón según esté en la vereda o en la calzada.
 		float y = EnCalzada() ? YCalzada : ProcPeaton.YVereda;
 		Position = new Vector3(Position.X, Mathf.Lerp(Position.Y, y, Mathf.Min(1f, 12f * d)), Position.Z);
@@ -295,6 +301,49 @@ public partial class Peaton : Node3D
 	/// <summary>Distancia en el piso: los nodos están a y=0.3 (vereda).</summary>
 	static float DistPlano(Vector3 a, Vector3 b) => new Vector2(b.X - a.X, b.Z - a.Z).Length();
 	bool EnCalzada() => Mathf.Abs(Position.X) < Borde || Mathf.Abs(Position.Z) < Borde;
+
+	/// <summary>Distancia personal: nadie se encima (ver test TestPeatones).</summary>
+	const float RadioPersonal = 1.1f;
+
+	/// <summary>Empujón SOLO lateral a la marcha: se corre al costado sin
+	/// frenar ni salirse del camino a su nodo.</summary>
+	Vector3 SeparacionLateral(Vector3 dirMarcha)
+	{
+		Vector3 empuje = Vector3.Zero;
+		int n = 0;
+		foreach (var h in GetTree().GetNodesInGroup("peaton"))
+		{
+			if (h is not Peaton otro || otro == this || !IsInstanceValid(otro)) continue;
+			Vector3 dif = Plano() - otro.Plano();
+			float dist = new Vector2(dif.X, dif.Z).Length();
+			if (dist > RadioPersonal) continue;
+			if (dist < 0.001f) dif = new Vector3(0.3f, 0, 0.1f);
+			Vector3 lat = dif.Normalized();
+			lat -= dirMarcha * lat.Dot(dirMarcha);
+			if (lat.LengthSquared() < 0.0001f) lat = new Vector3(-dirMarcha.Z, 0, dirMarcha.X);
+			empuje += lat.Normalized() * (RadioPersonal - dist);
+			n++;
+		}
+		return n == 0 ? Vector3.Zero : empuje / n * 1.6f;
+	}
+
+	/// <summary>¿Hay alguien pegado justo adelante? (para aflojar el paso).</summary>
+	bool BloqueadoAdelante(Vector3 dirMarcha)
+	{
+		foreach (var h in GetTree().GetNodesInGroup("peaton"))
+		{
+			if (h is not Peaton otro || otro == this || !IsInstanceValid(otro)) continue;
+			Vector3 dif = otro.Plano() - Plano();
+			float dist = new Vector2(dif.X, dif.Z).Length();
+			if (dist > 1.3f) continue;
+			if (dist < 0.001f) return true;
+			if (dif.Normalized().Dot(dirMarcha) > 0.6f) return true;
+		}
+		return false;
+	}
+
+	/// <summary>Hacia dónde mira (frente local +Z).</summary>
+	Vector3 Frente() => new(Mathf.Sin(Rotation.Y), 0, Mathf.Cos(Rotation.Y));
 
 	void Animar(float d)
 	{

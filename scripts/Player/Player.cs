@@ -62,6 +62,10 @@ public partial class Player : CharacterBody3D
 			AddChild(Mochila);
 		}
 		FloorSnapLength = 0.2f;
+		// Capa 4 = muros invisibles del borde (ProcCalle): solo el jugador
+		// choca con ellos (autos/peatones van por posición, el rayo del
+		// ladrón usa máscara 1).
+		CollisionMask |= 4;
 		cuerpo = GetNodeOrNull<MeshInstance3D>("MeshInstance3D");
 		camara = GetNodeOrNull<Camera3D>("CameraRig/Camera3D");
 		VestirLaburante();
@@ -472,6 +476,10 @@ public partial class Player : CharacterBody3D
 			vy = 4.8f; // salto para subir a la vereda
 		Velocity = new Vector3(dir.X * vel, vy, dir.Z * vel);
 		MoveAndSlide();
+		// Garantía dura: ni el empujón de un auto te saca del mundo. El muro
+		// frena lo normal, pero un empujón fuerte puede tunelarlo en 1 frame
+		// (o dejarte afuera de un tirón): el clamp te trae adentro siempre.
+		GlobalPosition = AplicarLimites(GlobalPosition);
 		AnimarAndar((float)delta);
 		// Red de seguridad: si algo falla y caes del mundo, reapareces en el spawn.
 		if (GlobalPosition.Y < -10f)
@@ -480,6 +488,17 @@ public partial class Player : CharacterBody3D
 			Velocity = Vector3.Zero;
 			Hud?.SetError("¡Te caíste del mundo! Reapareciste en la banqueta.");
 		}
+	}
+
+	/// <summary>Borde jugable (adentro de la cara interna de los muros).</summary>
+	public const float LimiteMundo = 17.5f;
+
+	/// <summary>Clamp puro al área jugable (testeable sin instanciar Player).</summary>
+	public static Vector3 AplicarLimites(Vector3 p)
+	{
+		p.X = Mathf.Clamp(p.X, -LimiteMundo, LimiteMundo);
+		p.Z = Mathf.Clamp(p.Z, -LimiteMundo, LimiteMundo);
+		return p;
 	}
 
 	void IntentarTrabajar()

@@ -24,6 +24,10 @@ public partial class Mejoras : CanvasLayer
 	/// <summary>Se emite al viajar (el GameManager re-skinnea la ciudad).</summary>
 	public event Action<int>? ViajeRealizado;
 
+	/// <summary>Se emite al completar todo al máximo en la última ciudad
+	/// (el GameManager lanza la secuencia final, una sola vez).</summary>
+	public event Action? FinalDesbloqueado;
+
 	[Signal] public delegate void CompraHechaEventHandler();
 	[Signal] public delegate void ViajeHechoEventHandler(int nuevaCiudad);
 
@@ -493,7 +497,7 @@ public partial class Mejoras : CanvasLayer
 		if (precio <= 0)
 		{
 			lblViaje.Text = ciudad >= 3
-				? $"🏁 {Ciudades.Nombre(ciudad)}: mejoras {a}/{t}. El final llega en la Fase 5."
+				? $"🏁 {Ciudades.Nombre(ciudad)}: mejoras {a}/{t}. Completá todo al máximo y pasará algo..."
 				: $"🏁 {Ciudades.Nombre(ciudad)}: mejoras {a}/{t}.";
 			btnViaje.Visible = false;
 			return;
@@ -569,6 +573,12 @@ public partial class Mejoras : CanvasLayer
 		if (idx < botones.Count) UiJuice.Punch(botones[idx]);
 		CompraRealizada?.Invoke();
 		EmitSignal(SignalName.CompraHecha);
+		// Todo al máximo en la última ciudad: el Tipo vuelve con la
+		// tirada final (una sola vez; el GameManager filtra repetidos).
+		if (SaveSystem.CargarCiudad() >= 3 && TiendaCompleta() && !SaveSystem.CargarFinalVisto())
+		{
+			FinalDesbloqueado?.Invoke();
+		}
 	}
 
 	public string NombreItem(string id)

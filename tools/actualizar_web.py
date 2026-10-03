@@ -47,6 +47,12 @@ def seccion_changelog(ver):
             m3 = re.match(r"- (.+)", linea)
             if m3 and isinstance(actual, str):
                 cambios.append({"tipo": actual, "texto": m3.group(1).strip()})
+                continue
+            # Bullets que ocupan varias lineas en el CHANGELOG: la
+            # continuacion se pega al ultimo cambio (si no, queda trunco).
+            if isinstance(actual, str) and cambios and linea.strip():
+                cambios[-1]["texto"] += " " + linea.strip()
+                continue
     return fecha, cambios
 
 
@@ -64,7 +70,11 @@ def guardar(path, data):
 
 
 def main():
-    ver = sys.argv[1] if len(sys.argv) > 1 else version_actual()
+    args = [a for a in sys.argv[1:] if not a.startswith("-")]
+    ver = args[0] if args else version_actual()
+    # --solo-mostrar: imprime lo que se publicaria SIN escribir nada.
+    # Lo usa la puerta del pipeline para que el usuario apruebe el texto.
+    solo = "--solo-mostrar" in sys.argv
     data_dir = os.path.join(RAIZ, "landing-web", "data")
     fecha, cambios = seccion_changelog(ver)
     if not fecha:
@@ -75,9 +85,13 @@ def main():
     rel_path = os.path.join(data_dir, "releases.json")
     releases = cargar(rel_path, [])
     if not any(r.get("version") == ver for r in releases):
-        releases.insert(0, {"version": ver, "fecha": fecha, "cambios": cambios})
-        guardar(rel_path, releases)
-        print(f"releases.json: agregada v{ver} ({len(cambios)} cambios).")
+        nueva = {"version": ver, "fecha": fecha, "cambios": cambios}
+        if solo:
+            print(f"[preview] releases.json agregaria: {json.dumps(nueva, ensure_ascii=False)}")
+        else:
+            releases.insert(0, nueva)
+            guardar(rel_path, releases)
+            print(f"releases.json: agregada v{ver} ({len(cambios)} cambios).")
     else:
         print(f"releases.json: v{ver} ya estaba.")
 
@@ -93,10 +107,8 @@ def main():
         if any(v.get("version") == ver and v.get("plataforma") == nombre for v in versiones):
             print(f"versiones.json: v{ver} {nombre} ya estaba.")
             continue
-        for v in versiones:
-            v["destacado"] = False
         mb = math.ceil(os.path.getsize(ruta_zip) / 1024 / 1024)
-        versiones.append({
+        nueva_v = {
             "version": ver,
             "fecha": fecha,
             "plataforma": nombre,
@@ -104,9 +116,20 @@ def main():
             "url": f"https://github.com/{REPO}/releases/download/v{ver}/{archivo}",
             "tamanio_mb": mb,
             "notas": cambios[0]["texto"] if cambios else "",
-            "destacado": plat == "windows",
-        })
+            "destacado": False,  # se marca abajo, una sola vez
+        }
+        if solo:
+            print(f"[preview] versiones.json agregaria: {json.dumps(nueva_v, ensure_ascii=False)}")
+            continue
+        versiones.append(nueva_v)
         print(f"versiones.json: agregada v{ver} {nombre} ({mb} MB).")
+    if solo:
+        print(f"[preview] destacada seria: v{ver} {PLATS[0][1]}")
+        return
+    # La destacada es la Windows nueva; si esto corriera por plataforma
+    # adentro del loop, la pasada de linux apagaria la de windows.
+    for v in versiones:
+        v["destacado"] = (v.get("version") == ver and v.get("plataforma") == PLATS[0][1])
     guardar(ver_path, versiones)
 
 

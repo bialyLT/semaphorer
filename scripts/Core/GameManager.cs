@@ -29,6 +29,8 @@ public partial class GameManager : Node3D
 	TutorialUI? tutorial;
 	HistoriaUI? historia;
 	IntroCinematica? intro;
+	ViajeCinematica? viaje;
+	FinalCinematica? final;
 
 	public override void _Ready()
 	{
@@ -60,6 +62,7 @@ public partial class GameManager : Node3D
 		{
 			Mejoras.ViajeRealizado += OnViaje;
 			Mejoras.CompraRealizada += RefrescarObjetivo;
+			Mejoras.FinalDesbloqueado += OnFinal;
 		}
 		if (Economia != null) Economia.CoinsChanged += OnMonedasParaObjetivo;
 		if (Economia != null)
@@ -187,12 +190,56 @@ public partial class GameManager : Node3D
 
 	string ultimoObjetivo = "";
 
-	/// <summary>Viaje completado: re-skin de edificios y objetivo al día.</summary>
+	/// <summary>Viaje: cinemática (el re-skin corre bajo negro) y objetivo al día.</summary>
 	void OnViaje(int nueva)
 	{
-		GetNodeOrNull<ProcEdificios>("Edificios")?.Reconstruir(nueva);
+		GetNodeOrNull<Mejoras>("Mejoras")?.Cerrar();
+		if (viaje != null) return;
+		int origen = Mathf.Max(1, nueva - 1);
+		viaje = new ViajeCinematica();
+		AddChild(viaje);
+		viaje.Terminada += OnViajeTerminada;
+		viaje.Mostrar(origen, nueva,
+			() => GetNodeOrNull<ProcEdificios>("Edificios")?.Reconstruir(nueva));
+	}
+
+	/// <summary>Terminó el viaje: objetivo, HUD y aviso de llegada al día.</summary>
+	void OnViajeTerminada()
+	{
+		if (viaje != null)
+		{
+			viaje.Terminada -= OnViajeTerminada;
+			viaje = null;
+		}
 		RefrescarObjetivo();
 		RefrescarHUD();
+		int ciudad = SaveSystem.CargarCiudad();
+		Hud?.SetOk($"¡Llegaste a {Ciudades.Nombre(ciudad)}! Acá se paga x{Ciudades.Mult(ciudad)}.");
+	}
+
+	/// <summary>Todo al máximo en la última ciudad: el Tipo vuelve con la
+	/// tirada final (una sola vez; la tienda ya filtró repetidos).</summary>
+	void OnFinal()
+	{
+		if (final != null || SaveSystem.CargarFinalVisto()) return;
+		GetNodeOrNull<Mejoras>("Mejoras")?.Cerrar();
+		final = new FinalCinematica();
+		AddChild(final);
+		final.Terminada += OnFinalTerminada;
+		final.Mostrar();
+	}
+
+	/// <summary>Terminó el final: sueño cumplido, objetivo y HUD al día.</summary>
+	void OnFinalTerminada()
+	{
+		if (final != null)
+		{
+			final.Terminada -= OnFinalTerminada;
+			final = null;
+		}
+		RefrescarObjetivo();
+		RefrescarHUD();
+		Hud?.SetOk("★ Sueño cumplido.");
 	}
 
 	/// <summary>Objetivo de ciudad en el HUD (solo se recalcula si cambió).</summary>
@@ -398,6 +445,7 @@ public partial class GameManager : Node3D
 		{
 			Mejoras.ViajeRealizado -= OnViaje;
 			Mejoras.CompraRealizada -= RefrescarObjetivo;
+			Mejoras.FinalDesbloqueado -= OnFinal;
 		}
 		var inv = InventarioRef();
 		if (inv != null) inv.Actualizado -= RefrescarObjetivo;
@@ -409,6 +457,8 @@ public partial class GameManager : Node3D
 		if (clima != null) clima.ClimaCambiado -= OnClimaReloj;
 		if (historia != null) historia.Terminada -= OnHistoriaTerminada;
 		if (intro != null) intro.Terminada -= OnIntroTerminada;
+		if (viaje != null) viaje.Terminada -= OnViajeTerminada;
+		if (final != null) final.Terminada -= OnFinalTerminada;
 	}
 
 	public override void _Process(double delta)
