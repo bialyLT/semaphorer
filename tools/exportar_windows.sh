@@ -24,9 +24,15 @@ if [ ! -d "$TPL_DIR" ]; then
   exit 1
 fi
 
-# 2. Compilar C#
+# 2. Compilar C# (con reintentos: el teardown de mono a veces vuelca
+# core DESPUÉS de compilar bien; reintentar no cuesta y evita falsos fallos)
 echo "-- Compilando C#..."
-godot --headless --build-solutions --quit --path .
+for i in 1 2 3; do
+  if godot --headless --build-solutions --quit --path .; then break; fi
+  echo "   build-solutions falló (intento $i/3), reintentando..."
+  sleep 2
+  if [ "$i" = 3 ]; then echo "ERROR: no se pudo compilar C#."; exit 1; fi
+done
 
 # 3. Exportar (carpeta vacia para no mezclar dlls viejas de C#)
 echo "-- Exportando $PRESET -> $OUT ..."
