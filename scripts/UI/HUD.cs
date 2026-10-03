@@ -7,6 +7,7 @@ using Godot;
 public partial class HUD : CanvasLayer
 {
 	Label? lblSemaforo, lblSemaforo2, lblSemaforo3, lblSemaforo4, lblDinero, lblMsg, lblProg, lblObjetivo, lblReloj;
+	Minimapa? mapa;
 	PanelContainer? panelPoli;
 	ProgressBar? barraPoli;
 	PanelContainer? panelLadron;
@@ -19,14 +20,17 @@ public partial class HUD : CanvasLayer
 
 	public override void _Ready()
 	{
-		lblSemaforo = CrearLabel("Carril 1", new Vector2(16, 12), 22);
-		lblSemaforo2 = CrearLabel("Carril 2", new Vector2(16, 42), 22);
-		lblSemaforo3 = CrearLabel("Carril 3", new Vector2(16, 72), 22);
-		lblSemaforo4 = CrearLabel("Carril 4", new Vector2(16, 102), 22);
-		lblDinero = CrearLabel("$0", new Vector2(16, 136), 24);
-		lblObjetivo = CrearLabel("", new Vector2(16, 162), 16);
+		// Minimapa arriba a la izquierda: la columna de texto baja debajo.
+		mapa = new Minimapa { Position = new Vector2(16, 12) };
+		AddChild(mapa);
+		lblSemaforo = CrearLabel("Carril 1", new Vector2(16, 200), 22);
+		lblSemaforo2 = CrearLabel("Carril 2", new Vector2(16, 230), 22);
+		lblSemaforo3 = CrearLabel("Carril 3", new Vector2(16, 260), 22);
+		lblSemaforo4 = CrearLabel("Carril 4", new Vector2(16, 290), 22);
+		lblDinero = CrearLabel("$0", new Vector2(16, 324), 24);
+		lblObjetivo = CrearLabel("", new Vector2(16, 354), 16);
 		lblObjetivo.AddThemeColorOverride("font_color", new Color(0.55f, 0.8f, 1));
-		lblProg = CrearLabel("", new Vector2(16, 184), 20);
+		lblProg = CrearLabel("", new Vector2(16, 380), 20);
 		lblReloj = CrearLabel("", new Vector2(0, 172), 20);
 		// Arriba a la derecha, debajo de las alertas (no pisa el aviso central).
 		lblReloj.AnchorLeft = 1f; lblReloj.AnchorRight = 1f;
@@ -319,5 +323,11 @@ public partial class HUD : CanvasLayer
 	public void SetObjetivo(string s)
 	{
 		if (lblObjetivo != null && lblObjetivo.Text != s) lblObjetivo.Text = s;
+	}
+
+	/// <summary>Conecta el minimapa (lo llama el GameManager al arrancar).</summary>
+	public void InicializarMinimapa(Node3D? jugador, TrafficLight?[] luces, Mejoras? tienda)
+	{
+		mapa?.Inicializar(jugador, luces, tienda);
 	}
 }

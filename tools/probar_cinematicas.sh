@@ -118,7 +118,7 @@ if echo "$OUT" | grep -q "SCRIPT ERROR\|Parse Error"; then
   echo "FALLA límites: hay errores de script."; FALLO=1
 elif ! echo "$OUT" | grep -q "TEST-LIMITE clamp a=(17.5, 0.5, -17.5)"; then
   echo "FALLA límites: el clamp no trae adentro."; FALLO=1
-elif ! awk "BEGIN{exit !(($XFIN > 15) && ($XFIN <= 18.5))}"; then
+elif ! awk "BEGIN{exit !(($XFIN > 27) && ($XFIN <= 30.5))}"; then
   echo "FALLA límites: se escapó del mundo (x=$XFIN)."; FALLO=1
 else
   echo "OK límites: frenó en x=$XFIN."

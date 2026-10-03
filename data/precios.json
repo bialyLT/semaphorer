@@ -122,6 +122,19 @@
         ]
       },
       {
+        "id": "mapa",
+        "nombre": "Mapa del cruce",
+        "rama": "CALLE",
+        "desc": "El minimapa muestra qué semáforo está en verde",
+        "niveles": [
+          {
+            "precio": 100,
+            "valor": 1,
+            "efecto": "Semáforos en verde/rojo en el minimapa"
+          }
+        ]
+      },
+      {
         "id": "pregon",
         "nombre": "Pregón",
         "rama": "CALLE",

@@ -32,10 +32,79 @@ public static class Ajustes
 
 	public static void Aplicar()
 	{
+		AplicarAudio();
+		AplicarVentana();
+	}
+
+	public static void AplicarAudio()
+	{
 		AudioServer.SetBusVolumeDb(AudioServer.GetBusIndex("Master"), Mathf.LinearToDb(Volumen / 100f));
-		DisplayServer.WindowSetMode(PantallaCompleta
+	}
+
+	static void AplicarVentana()
+	{
+		var deseado = PantallaCompleta
 			? DisplayServer.WindowMode.Fullscreen
-			: DisplayServer.WindowMode.Windowed);
+			: DisplayServer.WindowMode.Windowed;
+		try
+		{
+			if (DisplayServer.WindowGetMode() == deseado) return;
+			DisplayServer.WindowSetMode(deseado);
+		}
+		catch
+		{
+			DisplayServer.WindowSetMode(deseado);
+		}
+	}
+
+	/// <summary>
+	/// Lee el modo real de la ventana y lo adopta como preferencia
+	/// (sin forzar cambios). Solo sube ventana→completa, nunca baja:
+	/// salir de completa a propósito se hace con el checkbox.
+	/// Llamar antes de cambiar de escena para no perder el modo.
+	/// </summary>
+	public static void SincronizarDesdeVentana()
+	{
+		try
+		{
+			var m = DisplayServer.WindowGetMode();
+			if (m == DisplayServer.WindowMode.Fullscreen || m == DisplayServer.WindowMode.ExclusiveFullscreen)
+			{
+				if (!PantallaCompleta)
+				{
+					PantallaCompleta = true;
+					Guardar();
+				}
+			}
+		}
+		catch { }
+	}
+
+	/// <summary>
+	/// Para _Ready de cada escena: respeta la ventana actual en vez de
+	/// achicarla. Si ya está en completa, la adopta; si está maximizada
+	/// por el SO, no la fuerza a ventana; si no, aplica lo guardado.
+	/// </summary>
+	public static void AplicarAlIniciarEscena()
+	{
+		AplicarAudio();
+		try
+		{
+			var m = DisplayServer.WindowGetMode();
+			if (m == DisplayServer.WindowMode.Fullscreen || m == DisplayServer.WindowMode.ExclusiveFullscreen)
+			{
+				PantallaCompleta = true;
+				Guardar();
+				return;
+			}
+			if (m == DisplayServer.WindowMode.Maximized)
+			{
+				if (PantallaCompleta) AplicarVentana();
+				return;
+			}
+		}
+		catch { }
+		AplicarVentana();
 	}
 
 	/// <summary>Panel de opciones reutilizable (menú y pausa). Llama a Guardar al cambiar.</summary>
@@ -55,7 +124,7 @@ public static class Ajustes
 		tV.AddThemeFontSizeOverride("font_size", 18);
 		caja.AddChild(tV);
 		var sV = new HSlider { MinValue = 0, MaxValue = 100, Step = 1, Value = Volumen, CustomMinimumSize = new Vector2(280, 0), SizeFlagsHorizontal = Control.SizeFlags.ExpandFill };
-		sV.ValueChanged += v => { Volumen = (float)v; tV.Text = $"Volumen: {Volumen:0}%"; Aplicar(); Guardar(); };
+		sV.ValueChanged += v => { Volumen = (float)v; tV.Text = $"Volumen: {Volumen:0}%"; AplicarAudio(); Guardar(); };
 		caja.AddChild(sV);
 
 		var cF = new CheckButton { Text = "Pantalla completa", ButtonPressed = PantallaCompleta };

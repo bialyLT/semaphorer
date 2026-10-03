@@ -55,17 +55,19 @@ public partial class ProcCalle : Node3D
 	}
 
 	/// <summary>
-	/// Muros invisibles en el borde del mundo jugable (±18): el jugador no
-	/// puede caerse al vacío. Capa 4 solo para el jugador (los autos y
-	/// peatones se mueven por posición, y el rayo del ladrón usa máscara 1:
-	/// nada de eso los ve). Sin malla = invisibles.
+	/// Muros invisibles en el borde del suelo (±30): red de seguridad para
+	/// no caerse al vacío. El límite de gameplay lo pone el clamp dinámico
+	/// del Player (base ±17.5, se estira con la cola de autos hasta ±29):
+	/// estos muros nunca deben frenar antes que el clamp. Capa 4 solo para
+	/// el jugador (los autos y peatones se mueven por posición, y el rayo
+	/// del ladrón usa máscara 1: nada de eso los ve). Sin malla = invisibles.
 	/// </summary>
 	void ConstruirLimites()
 	{
-		Limite("LimiteE", new Vector3(0.5f, 6f, 37f), new Vector3(18f, 2f, 0), this);
-		Limite("LimiteO", new Vector3(0.5f, 6f, 37f), new Vector3(-18f, 2f, 0), this);
-		Limite("LimiteN", new Vector3(37f, 6f, 0.5f), new Vector3(0, 2f, 18f), this);
-		Limite("LimiteS", new Vector3(37f, 6f, 0.5f), new Vector3(0, 2f, -18f), this);
+		Limite("LimiteE", new Vector3(0.5f, 6f, 61f), new Vector3(30f, 2f, 0), this);
+		Limite("LimiteO", new Vector3(0.5f, 6f, 61f), new Vector3(-30f, 2f, 0), this);
+		Limite("LimiteN", new Vector3(61f, 6f, 0.5f), new Vector3(0, 2f, 30f), this);
+		Limite("LimiteS", new Vector3(61f, 6f, 0.5f), new Vector3(0, 2f, -30f), this);
 	}
 
 	static void Limite(string nombre, Vector3 tam, Vector3 pos, Node3D padre)

@@ -1,8 +1,8 @@
 {
   "semaforo": {
-    "verde_seg": 19,
+    "verde_seg": 12,
     "amarillo_seg": 3,
-    "rojo_seg": 66
+    "rojo_seg": 45
   },
   "limpiaparabrisas": {
     "golpes_para_completar": 6,

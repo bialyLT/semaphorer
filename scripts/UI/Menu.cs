@@ -27,7 +27,7 @@ public partial class Menu : CanvasLayer
 	public override void _Ready()
 	{
 		Ajustes.Cargar();
-		Ajustes.Aplicar();
+		Ajustes.AplicarAlIniciarEscena();
 		SaveSystem.MigrarLegado();
 		ConstruirUI();
 		RefrescarSlots();
@@ -295,6 +295,7 @@ public partial class Menu : CanvasLayer
 
 	void Jugar()
 	{
+		Ajustes.SincronizarDesdeVentana();
 		GetTree()?.ChangeSceneToFile("res://scenes/Cruce.tscn");
 	}
 }

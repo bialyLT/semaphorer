@@ -3,8 +3,8 @@ using System.Text.Json;
 
 /// <summary>
 /// Raíz del juego. Carga balance.json y conecta semáforos, economía y HUD.
-/// Ciclo en 4 fases (carril 1 → 2 → 3 → 4): cada luz tiene su verde de 19s
-/// y su rojo de 66s; nunca hay doble verde.
+/// Ciclo en 4 fases (carril 1 → 2 → 3 → 4): cada luz tiene su verde de 12s
+/// y su rojo de 45s; nunca hay doble verde.
 /// </summary>
 public partial class GameManager : Node3D
 {
@@ -22,9 +22,9 @@ public partial class GameManager : Node3D
 	bool restaurarPoliciaPendiente = true;
 	double acumAutosave;
 
-	public int VerdeSeg { get; private set; } = 19;
+	public int VerdeSeg { get; private set; } = 12;
 	public int AmarilloSeg { get; private set; } = 3;
-	public int RojoSeg { get; private set; } = 66;
+	public int RojoSeg { get; private set; } = 45;
 
 	TutorialUI? tutorial;
 	HistoriaUI? historia;
@@ -35,7 +35,7 @@ public partial class GameManager : Node3D
 	public override void _Ready()
 	{
 		Ajustes.Cargar();
-		Ajustes.Aplicar();
+		Ajustes.AplicarAlIniciarEscena();
 		Semaforo ??= GetNodeOrNull<TrafficLight>("Semaforo");
 		Semaforo2 ??= GetNodeOrNull<TrafficLight>("Semaforo2");
 		Semaforo3 ??= GetNodeOrNull<TrafficLight>("Semaforo3");
@@ -50,13 +50,18 @@ public partial class GameManager : Node3D
 		Semaforo3?.ConstruirPortico(new Vector3(-6, 0, 0), -90f, 2f);
 		Semaforo4?.ConstruirPortico(new Vector3(6, 0, 0), 90f, 2f);
 		ConfigurarLuz(Semaforo, 0f);
-		ConfigurarLuz(Semaforo2, 66f);
-		ConfigurarLuz(Semaforo3, 44f);
-		ConfigurarLuz(Semaforo4, 22f);
+		// Desfases en cuartos de ciclo (nunca hay doble verde): se derivan
+		// de los tiempos cargados para que verde/rojo siempre encajen.
+		float cuarto = (VerdeSeg + AmarilloSeg + RojoSeg) / 4f;
+		ConfigurarLuz(Semaforo2, cuarto * 3f);
+		ConfigurarLuz(Semaforo3, cuarto * 2f);
+		ConfigurarLuz(Semaforo4, cuarto * 1f);
 		if (Economia != null && Hud != null)
 		{
 			Economia.CoinsChanged += Hud.SetDinero;
 			Hud.SetDinero(Economia.Coins);
+			Hud.InicializarMinimapa(GetNodeOrNull<Player>("Player"),
+				new TrafficLight?[] { Semaforo, Semaforo2, Semaforo3, Semaforo4 }, Mejoras);
 		}
 		if (Mejoras != null)
 		{

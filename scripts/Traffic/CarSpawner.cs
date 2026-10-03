@@ -365,6 +365,24 @@ public partial class CarSpawner : Node3D
 		autos.Add(car);
 	}
 
+	/// <summary>
+	/// Límite jugable dinámico: hasta dónde llega la cola de autos detenidos
+	/// en su eje de marcha, más margen para pararse a trabajar al lado del
+	/// último. 0 si no hay cola (el Player usa su base). Patrulla y autos en
+	/// ruta (ya cruzaron, se van) no cuentan: solo la cola del rojo.
+	/// </summary>
+	public float AlcanceCola(float margen = 5f)
+	{
+		float max = 0f;
+		foreach (var c in autos)
+		{
+			if (!IsInstanceValid(c) || c is PatrolAI || c.EnRuta || !c.EstaDetenido()) continue;
+			float eje = c.EjeX ? Mathf.Abs(c.GlobalPosition.X) : Mathf.Abs(c.GlobalPosition.Z);
+			if (eje > max) max = eje;
+		}
+		return max <= 0f ? 0f : max + margen;
+	}
+
 	/// <summary>Auto lavable más cercano al jugador dentro de rango.</summary>
 	public CarAI? AutoCercanoDetenido(Vector3 desde, float rango)
 	{

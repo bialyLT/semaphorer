@@ -107,6 +107,7 @@ public partial class Pausa : CanvasLayer
 		var gm = GetParent() as GameManager;
 		if (gm != null) gm.GuardarSalida();
 		else if (Economia != null) SaveSystem.Guardar(Economia.Coins);
+		Ajustes.SincronizarDesdeVentana();
 		Ajustes.Guardar();
 		UiPila.SoltarTodo(GetTree());
 		GetTree()?.ChangeSceneToFile("res://scenes/Menu.tscn");

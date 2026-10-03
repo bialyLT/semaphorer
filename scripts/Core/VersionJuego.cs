@@ -1,9 +1,8 @@
 /// <summary>
 /// Versión visible del juego (menú + pausa + project.godot + export).
-/// 1.5.7: saltear cinemáticas pide mantener presionado 1.5s (no más
-/// saltos sin querer).
+/// 1.6.0: minimapa del cruce + mejora Mapa (semáforos en el mapa).
 /// </summary>
 public static class VersionJuego
 {
-	public const string Actual = "1.5.7";
+	public const string Actual = "1.6.0";
 }

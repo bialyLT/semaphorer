@@ -2,7 +2,8 @@ using Godot;
 
 // Harness headless de límites (dev-only): construye la ProcCalle real y
 // manda un cuerpo como el jugador (capa 1, máscara 1|4) contra el este.
-// Sin muros se escapa del mundo (x>25); con muros frena en ~17.3.
+// Sin muros se escapa del mundo (x>35); con muros frena en ~29.5 (borde
+// del suelo: el límite de gameplay lo pone el clamp dinámico del Player).
 public partial class TestLimitesRunner : Node3D
 {
 	CharacterBody3D? cuerpo;
@@ -35,7 +36,7 @@ public partial class TestLimitesRunner : Node3D
 		frames++;
 		if (cuerpo != null && IsInstanceValid(cuerpo))
 		{
-			cuerpo.Velocity = new Vector3(5, 0, 0);
+			cuerpo.Velocity = new Vector3(8, 0, 0);
 			cuerpo.MoveAndSlide();
 		}
 		if (frames >= 240)

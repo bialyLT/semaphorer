@@ -26,33 +26,55 @@ def version_actual():
     return m.group(1)
 
 
-def seccion_changelog(ver):
-    fecha, cambios, actual = "", [], None
+def versiones_publicadas():
+    """Devuelve el set de versiones que ya están en releases.json."""
+    rel_path = os.path.join(RAIZ, "landing-web", "data", "releases.json")
+    data = cargar(rel_path, [])
+    return {r["version"] for r in data}
+
+
+def seccion_changelog(ver, hasta_anterior=None):
+    """Devuelve (fecha, cambios) para `ver`.
+
+    Si `hasta_anterior` es una versión string, acumula también los cambios de
+    todas las versiones intermedias en el CHANGELOG entre `ver` (inclusive) y
+    `hasta_anterior` (exclusive).  Si es None, toma solo la sección de `ver`.
+    """
+    fecha, cambios, capturando = "", [], False
+    tipo_actual = None
     with open(os.path.join(RAIZ, "CHANGELOG.md"), encoding="utf-8") as f:
         for linea in f:
             m = re.match(r"## \[(.+?)\] - (\d{4}-\d{2}-\d{2})", linea)
             if m:
-                if m.group(1) == ver:
+                v_linea = m.group(1)
+                if v_linea == ver:
                     fecha = m.group(2)
-                    actual = True
-                elif actual:
-                    break
+                    capturando = True
+                    tipo_actual = None
+                    continue
+                if capturando:
+                    # Parar si llegamos a la versión anterior publicada
+                    if hasta_anterior and v_linea == hasta_anterior:
+                        break
+                    # Parar también si hasta_anterior es None (solo esta ver)
+                    if not hasta_anterior:
+                        break
+                    # Versión intermedia: seguimos capturando
+                    tipo_actual = None
                 continue
-            if not actual:
+            if not capturando:
                 continue
             m2 = re.match(r"### (\w+)", linea)
             if m2:
-                actual = m2.group(1)
+                tipo_actual = m2.group(1)
                 continue
             m3 = re.match(r"- (.+)", linea)
-            if m3 and isinstance(actual, str):
-                cambios.append({"tipo": actual, "texto": m3.group(1).strip()})
+            if m3 and tipo_actual:
+                cambios.append({"tipo": tipo_actual, "texto": m3.group(1).strip()})
                 continue
-            # Bullets que ocupan varias lineas en el CHANGELOG: la
-            # continuacion se pega al ultimo cambio (si no, queda trunco).
-            if isinstance(actual, str) and cambios and linea.strip():
+            # Bullets multi-línea: se pegan al último cambio
+            if tipo_actual and cambios and linea.strip():
                 cambios[-1]["texto"] += " " + linea.strip()
-                continue
     return fecha, cambios
 
 
@@ -76,7 +98,24 @@ def main():
     # Lo usa la puerta del pipeline para que el usuario apruebe el texto.
     solo = "--solo-mostrar" in sys.argv
     data_dir = os.path.join(RAIZ, "landing-web", "data")
-    fecha, cambios = seccion_changelog(ver)
+
+    # Versiones ya publicadas: sirven para saber qué acumular.
+    # Las ordenamos por semver para encontrar la inmediatamente anterior a `ver`.
+    rel_path = os.path.join(data_dir, "releases.json")
+    releases_actuales = cargar(rel_path, [])
+    publicadas = sorted(
+        {r["version"] for r in releases_actuales},
+        key=lambda v: [int(x) for x in v.split(".")],
+    )
+    ver_tuple = [int(x) for x in ver.split(".")]
+    # La anterior publicada es la más grande que sea estrictamente menor a `ver`
+    anterior_publicada = None
+    for pv in reversed(publicadas):
+        if [int(x) for x in pv.split(".")] < ver_tuple:
+            anterior_publicada = pv
+            break
+
+    fecha, cambios = seccion_changelog(ver, hasta_anterior=anterior_publicada)
     if not fecha:
         print(f"CHANGELOG sin entrada para {ver}, no toco la web.")
         return

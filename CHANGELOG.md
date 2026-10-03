@@ -3,6 +3,26 @@
 Formato: Keep a Changelog. Versiones: SemVer (`MAJOR.MINOR.PATCH`).
 Ver skill `versionado` para las reglas de bump de este proyecto.
 
+## [1.6.0] - 2026-10-03
+
+### Added
+- Nuevo minimapa en la esquina: muestra dónde estás, y con la mejora Mapa del cruce también qué semáforo está en verde.
+
+## [1.5.10] - 2026-10-03
+
+### Fixed
+- Los semáforos ahora son más cortos: el verde dura 12 segundos.
+
+## [1.5.9] - 2026-10-03
+
+### Fixed
+- Límite invisible del jugador ampliado y configurado dinámicamente.
+
+## [1.5.8] - 2026-10-03
+
+### Fixed
+- La pantalla completa ya no se sale al empezar una partida nueva.
+
 ## [1.5.7] - 2026-10-03
 
 ### Fixed

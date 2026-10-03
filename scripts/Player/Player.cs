@@ -479,7 +479,9 @@ public partial class Player : CharacterBody3D
 		// Garantía dura: ni el empujón de un auto te saca del mundo. El muro
 		// frena lo normal, pero un empujón fuerte puede tunelarlo en 1 frame
 		// (o dejarte afuera de un tirón): el clamp te trae adentro siempre.
-		GlobalPosition = AplicarLimites(GlobalPosition);
+		// El clamp es dinámico: se estira con la cola de autos detenidos
+		// (hasta el borde del suelo) para alcanzar al último de la fila.
+		GlobalPosition = AplicarLimites(GlobalPosition, MedioEjeDinamico());
 		AnimarAndar((float)delta);
 		// Red de seguridad: si algo falla y caes del mundo, reapareces en el spawn.
 		if (GlobalPosition.Y < -10f)
@@ -490,15 +492,36 @@ public partial class Player : CharacterBody3D
 		}
 	}
 
-	/// <summary>Borde jugable (adentro de la cara interna de los muros).</summary>
+	/// <summary>
+	/// Borde jugable: base pegada al cruce, techo en el borde del suelo.
+	/// El límite real es dinámico (ver AlcanceCola): crece con la cola de
+	/// autos detenidos para llegar al último, nunca pasa el suelo.
+	/// </summary>
 	public const float LimiteMundo = 17.5f;
+	public const float LimiteBase = 17.5f;
+	public const float LimiteSuelo = 29f;
+
+	/// <summary>Clamp al área base (sin cola: igual que antes).</summary>
+	public static Vector3 AplicarLimites(Vector3 p) => AplicarLimites(p, LimiteBase);
 
 	/// <summary>Clamp puro al área jugable (testeable sin instanciar Player).</summary>
-	public static Vector3 AplicarLimites(Vector3 p)
+	public static Vector3 AplicarLimites(Vector3 p, float medioEje)
 	{
-		p.X = Mathf.Clamp(p.X, -LimiteMundo, LimiteMundo);
-		p.Z = Mathf.Clamp(p.Z, -LimiteMundo, LimiteMundo);
+		float m = Mathf.Clamp(medioEje, LimiteBase, LimiteSuelo);
+		p.X = Mathf.Clamp(p.X, -m, m);
+		p.Z = Mathf.Clamp(p.Z, -m, m);
 		return p;
+	}
+
+	/// <summary>
+	/// Medio eje jugable según la cola actual: base sin autos detenidos,
+	/// hasta el último de la fila (+margen) con autos, tope en el suelo.
+	/// </summary>
+	float MedioEjeDinamico()
+	{
+		CarSpawner? sp = Trabajo?.Spawner ?? Malabares?.Spawner ?? Venta?.Spawner;
+		if (sp == null) return LimiteBase;
+		return Mathf.Clamp(Mathf.Max(LimiteBase, sp.AlcanceCola()), LimiteBase, LimiteSuelo);
 	}
 
 	void IntentarTrabajar()
