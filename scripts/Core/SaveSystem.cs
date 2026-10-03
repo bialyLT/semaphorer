@@ -130,6 +130,8 @@ public static class SaveSystem
 	/// <summary>
 	/// El renombre a Semaphorer cambia la carpeta de user://.
 	/// Copia la partida vieja ("Simulador Semaforo") al slot 1 una sola vez.
+	/// La consume (borra el original): si no, borrar el slot 1 a propósito
+	/// resucita la partida vieja en el próximo arranque.
 	/// </summary>
 	public static void MigrarLegado()
 	{
@@ -142,6 +144,7 @@ public static class SaveSystem
 			{
 				System.IO.Directory.CreateDirectory(System.IO.Path.GetDirectoryName(nuevo)!);
 				System.IO.File.Copy(viejo, nuevo);
+				System.IO.File.Delete(viejo);
 			}
 		}
 		catch (System.Exception e)

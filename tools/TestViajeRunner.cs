@@ -2,8 +2,8 @@ using Godot;
 
 // Harness headless de cinemáticas (dev-only, no lo usa el juego).
 // Lo corre tools/probar_cinematicas.sh en 2 modos:
-// sin args = skip con Esc antes del negro · --full = de corrido.
-// Imprime líneas TEST que el .sh valida.
+// sin args = skip con HOLD de Esc (presiona en 30, suelta en 140) ·
+// --full = de corrido. Imprime líneas TEST que el .sh valida.
 public partial class TestViajeRunner : Node
 {
 	ViajeCinematica? v;
@@ -21,21 +21,31 @@ public partial class TestViajeRunner : Node
 		AddChild(v);
 		v.Mostrar(1, 2, () => { reskin = true; GD.Print("TEST reskin ejecutado"); });
 		GD.Print("TEST mostrar ok, full=", full);
+		// Garantía pre-negro: Terminar a t=0 igual corre el re-skin.
+		var v2 = new ViajeCinematica();
+		AddChild(v2);
+		v2.Mostrar(2, 3, () => GD.Print("TEST garantia reskin"));
+		v2.Terminar();
 	}
 
 	public override void _Process(double d)
 	{
 		frames++;
-		// Skip ANTES del negro (frame 30 ~= 0.5s < 1.2s): Terminar debe
-		// garantizar el re-skin igual.
-		if (!full && frames == 30 && v != null && IsInstanceValid(v))
+		bool viva = v != null && IsInstanceValid(v);
+		// Hold real: presiona en 30, suelta en 140 (1.83s > 1.5s).
+		// En 60 (0.5s de hold) tiene que SEGUIR viva: un toque no salta.
+		if (!full && frames == 30 && viva)
 		{
 			GD.Print("TEST pre-skip reskin=", reskin);
-			v._Input(new InputEventKey { PhysicalKeycode = Key.Escape, Pressed = true });
-			GD.Print("TEST skip enviado, reskin=", reskin);
+			v!._Input(new InputEventKey { PhysicalKeycode = Key.Escape, Pressed = true });
 		}
-		bool viva = v != null && IsInstanceValid(v);
-		if ((!full && frames >= 60) || (full && (frames > 30000 || !viva)))
+		if (!full && frames == 60) GD.Print("TEST sigue viva=", viva);
+		if (!full && frames == 140 && viva)
+		{
+			v!._Input(new InputEventKey { PhysicalKeycode = Key.Escape, Pressed = false });
+			GD.Print("TEST solto");
+		}
+		if ((!full && (!viva || frames >= 300)) || (full && (!viva || frames > 30000)))
 		{
 			GD.Print("TEST fin frames=", frames, " reskin=", reskin, " viva=", viva);
 			GetTree().Quit();

@@ -34,10 +34,11 @@ public partial class TestFinalRunner : Node
 
 	static InputEventKey Tecla(Key k) => new() { PhysicalKeycode = k, Pressed = true };
 
-	void EspacioAFinal()
+	void EspacioAFinal(bool soltar)
 	{
 		if (fin == null || !IsInstanceValid(fin)) return;
 		var ev = Tecla(Key.Space);
+		ev.Pressed = !soltar;
 		foreach (var c in fin.GetChildren())
 		{
 			if (c is DialogoUI d && IsInstanceValid(d)) d._Input(ev);
@@ -79,7 +80,10 @@ public partial class TestFinalRunner : Node
 		}
 		else if (step == 3)
 		{
-			if (stepFrames % 20 == 0) EspacioAFinal();
+			// Taps (presiona un frame, suelta al siguiente): avanzan diálogos
+			// y tirada sin cargar el skip global (pide 1.5s de hold).
+			if (stepFrames % 20 == 0) EspacioAFinal(false);
+			else if (stepFrames % 20 == 1) EspacioAFinal(true);
 			bool viva = fin != null && IsInstanceValid(fin);
 			if (!viva || stepFrames > 3000)
 			{

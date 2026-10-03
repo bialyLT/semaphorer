@@ -33,6 +33,7 @@ public partial class ViajeCinematica : CanvasLayer
 	float tiempo;
 	bool terminada;
 	bool pausaSuelta;
+	readonly SaltoHold salto = new();
 	bool reskinHecho;
 	Action? alNegro;
 	readonly Vector3 mira = new(0, 1f, 0);
@@ -80,7 +81,7 @@ public partial class ViajeCinematica : CanvasLayer
 		lblSub.OffsetTop = -160; lblSub.OffsetBottom = -90;
 		AddChild(lblSub);
 
-		lblSaltar = new Label { Text = "Esc / Espacio: saltar ▸" };
+		lblSaltar = new Label { Text = "Mantené ESPACIO o ESC para saltar" };
 		lblSaltar.AddThemeFontSizeOverride("font_size", 14);
 		lblSaltar.AddThemeColorOverride("font_color", new Color(0.7f, 0.7f, 0.7f));
 		lblSaltar.SetAnchorsPreset(Control.LayoutPreset.BottomWide);
@@ -154,25 +155,18 @@ public partial class ViajeCinematica : CanvasLayer
 			lblSub.Text = n > 0 ? cual.Substring(0, n) : "";
 		}
 		if (tiempo >= TFin) Terminar();
+		if (salto.Procesar((float)delta)) { Terminar(); return; }
+		if (lblSaltar != null)
+			lblSaltar.Text = salto.Manteniendo ? $"Saltando {salto.Barra()}" : "Mantené ESPACIO o ESC para saltar";
 	}
 
+	/// <summary>Sin click (se dispara sin querer): solo registra mantener.</summary>
 	public override void _Input(InputEvent @event)
 	{
 		if (!Visible || terminada) return;
-		if (@event is InputEventMouseButton mb && mb.Pressed &&
-			(mb.ButtonIndex == MouseButton.Left || mb.ButtonIndex == MouseButton.Right))
-		{
-			Terminar();
-			GetViewport().SetInputAsHandled();
-			return;
-		}
-		if (@event is not InputEventKey k || !k.Pressed || k.Echo) return;
-		if (k.PhysicalKeycode == Key.Escape || k.PhysicalKeycode == Key.Space ||
-			k.PhysicalKeycode == Key.Enter || k.PhysicalKeycode == Key.KpEnter)
-		{
-			Terminar();
-			GetViewport().SetInputAsHandled();
-		}
+		if (@event is not InputEventKey k || k.Echo) return;
+		if (k.Pressed) salto.AlPresionar(k.PhysicalKeycode);
+		else salto.AlSoltar(k.PhysicalKeycode);
 	}
 
 	public void Terminar()

@@ -3,6 +3,21 @@
 Formato: Keep a Changelog. Versiones: SemVer (`MAJOR.MINOR.PATCH`).
 Ver skill `versionado` para las reglas de bump de este proyecto.
 
+## [1.5.7] - 2026-10-03
+
+### Fixed
+- Las cinemáticas ahora se saltean manteniendo presionado.
+
+## [1.5.6] - 2026-10-03
+
+### Fixed
+- Borrar una partida ahora pide confirmación.
+
+## [1.5.5] - 2026-10-03
+
+### Fixed
+- Las partidas borradas ya no vuelven a aparecer.
+
 ## [1.5.4] - 2026-10-03
 
 ### Fixed

@@ -21,17 +21,21 @@ else
   echo "OK menú sin errores."
 fi
 
-echo "== [2/3] Viaje con skip pre-negro (Esc a los 0.5s)..."
+echo "== [2/3] Viaje con hold de Esc (1.5s para saltar)..."
 OUT=$(timeout 90 godot --headless --fixed-fps 60 --path . res://tools/TestViaje.tscn 2>&1)
 echo "$OUT" | grep "TEST" || true
 if echo "$OUT" | grep -q "SCRIPT ERROR\|Parse Error"; then
   echo "FALLA skip: hay errores de script."; FALLO=1
 elif ! echo "$OUT" | grep -q "TEST pre-skip reskin=False"; then
-  echo "FALLA skip: el Esc no llegó antes del negro."; FALLO=1
-elif ! echo "$OUT" | grep -q "TEST fin frames=60 reskin=True viva=False"; then
-  echo "FALLA skip: re-skin no garantizado o nodo no liberado."; FALLO=1
+  echo "FALLA skip: orden inesperado."; FALLO=1
+elif ! echo "$OUT" | grep -q "TEST sigue viva=True"; then
+  echo "FALLA skip: un toque corto salta (debería pedir hold)."; FALLO=1
+elif ! echo "$OUT" | grep -q "TEST garantia reskin"; then
+  echo "FALLA skip: sin garantía pre-negro."; FALLO=1
+elif ! echo "$OUT" | grep -q "TEST fin .* reskin=True viva=False"; then
+  echo "FALLA skip: no saltó con hold o no liberó."; FALLO=1
 else
-  echo "OK skip: re-skin garantizado y nodo liberado."
+  echo "OK skip: toque no salta, hold sí, re-skin garantizado."
 fi
 
 echo "== [3/3] Viaje completo (10.5s de corrido)..."
@@ -53,27 +57,34 @@ echo "PRUEBAS viaje+menú: PASA (3/3)"
 
 echo "== [4/4] Final (dormitorio + diálogo + millón + orquestación)..."
 rm -rf "$BK"; mkdir -p "$BK"
-cp "$UDATA/partida1.cfg" "$BK/" 2>/dev/null || true
-OUT=$(timeout 180 godot --headless --fixed-fps 60 --path . res://tools/TestFinal.tscn 2>&1)
-echo "$OUT" | grep "TEST" || true
-VISTO="no"
-if grep -q "final_visto=true" "$UDATA/partida1.cfg" 2>/dev/null; then VISTO="si"; fi
-cp "$BK/partida1.cfg" "$UDATA/" 2>/dev/null || true
-echo "   final_visto escrito durante el test: $VISTO (slot 1 restaurado)"
-if echo "$OUT" | grep -q "SCRIPT ERROR\|Parse Error"; then
-  echo "FALLA final: hay errores de script."; FALLO=1
-elif ! echo "$OUT" | grep -q "TEST-FINAL dialogo OK"; then
-  echo "FALLA final: el diálogo no avanzó."; FALLO=1
-elif ! echo "$OUT" | grep -q "TEST-FINAL tirada OK millon"; then
-  echo "FALLA final: no salió el millón."; FALLO=1
-elif ! echo "$OUT" | grep -q "TEST-FINAL orquesta OK visto=True"; then
-  echo "FALLA final: la orquestación no completó."; FALLO=1
-elif ! echo "$OUT" | grep -q "volvio=True"; then
-  echo "FALLA final: el jugador no volvió a su posición."; FALLO=1
-elif [ "$VISTO" != "si" ]; then
-  echo "FALLA final: no se guardó final_visto."; FALLO=1
+HABIA=0
+if [ -f "$UDATA/partida1.cfg" ]; then cp "$UDATA/partida1.cfg" "$BK/"; HABIA=1; fi
+# Si el slot 1 se tocó hace poco, alguien está jugando: no lo piso.
+EDAD=$(( $(date +%s) - $(stat -c %Y "$UDATA/partida1.cfg" 2>/dev/null || echo 0) ))
+if [ "$EDAD" -lt 180 ]; then
+  echo "   slot 1 en uso reciente: omito test del final (juego abierto?)."
 else
-  echo "OK final: piezas + millón + sueño cumplido guardado."
+  OUT=$(timeout 180 godot --headless --fixed-fps 60 --path . res://tools/TestFinal.tscn 2>&1)
+  echo "$OUT" | grep "TEST-FINAL" || true
+  VISTO="no"
+  if grep -q "final_visto=true" "$UDATA/partida1.cfg" 2>/dev/null; then VISTO="si"; fi
+  if [ "$HABIA" = 1 ]; then cp "$BK/partida1.cfg" "$UDATA/"; else rm -f "$UDATA/partida1.cfg"; fi
+  echo "   final_visto escrito durante el test: $VISTO (slot 1 restaurado)"
+  if echo "$OUT" | grep -q "SCRIPT ERROR\|Parse Error"; then
+    echo "FALLA final: hay errores de script."; FALLO=1
+  elif ! echo "$OUT" | grep -q "TEST-FINAL dialogo OK"; then
+    echo "FALLA final: el diálogo no avanzó."; FALLO=1
+  elif ! echo "$OUT" | grep -q "TEST-FINAL tirada OK millon"; then
+    echo "FALLA final: no salió el millón."; FALLO=1
+  elif ! echo "$OUT" | grep -q "TEST-FINAL orquesta OK visto=True"; then
+    echo "FALLA final: la orquestación no completó."; FALLO=1
+  elif ! echo "$OUT" | grep -q "volvio=True"; then
+    echo "FALLA final: el jugador no volvió a su posición."; FALLO=1
+  elif [ "$VISTO" != "si" ]; then
+    echo "FALLA final: no se guardó final_visto."; FALLO=1
+  else
+    echo "OK final: piezas + millón + sueño cumplido guardado."
+  fi
 fi
 
 echo ""
@@ -115,4 +126,42 @@ fi
 
 echo ""
 if [ "$FALLO" != "0" ]; then echo "PRUEBAS: FALLA"; exit 1; fi
-echo "PRUEBAS: PASA (6/6)"
+echo "PRUEBAS mundo: PASA (6/6)"
+
+echo "== [7/7] Prólogo (jugador oculto + oficio jugable)..."
+OUT=$(LC_ALL=C timeout 90 godot --headless --fixed-fps 60 --path . res://tools/TestPrologo.tscn 2>&1)
+echo "$OUT" | grep "TEST-PROLOGO" || true
+if echo "$OUT" | grep -q "SCRIPT ERROR\|Parse Error"; then
+  echo "FALLA prólogo: hay errores de script."; FALLO=1
+elif ! echo "$OUT" | grep -q "TEST-PROLOGO oculta=True"; then
+  echo "FALLA prólogo: el jugador no se ocultó."; FALLO=1
+elif ! echo "$OUT" | grep -q "TEST-PROLOGO fin oficio=.* jugable=True visible=True"; then
+  echo "FALLA prólogo: oficio inválido o no volvió."; FALLO=1
+else
+  echo "OK prólogo: oculto durante la tirada, volvió con oficio."
+fi
+
+echo ""
+if [ "$FALLO" != "0" ]; then echo "PRUEBAS: FALLA"; exit 1; fi
+echo "PRUEBAS mundo: PASA (7/7)"
+
+echo "== [8/8] Modal borrar (abre, cancela, Esc)..."
+OUT=$(LC_ALL=C timeout 90 godot --headless --fixed-fps 60 --path . res://tools/TestMenu.tscn 2>&1)
+echo "$OUT" | grep "TEST-MENU" || true
+if echo "$OUT" | grep -q "SCRIPT ERROR\|Parse Error"; then
+  echo "FALLA modal: hay errores de script."; FALLO=1
+elif echo "$OUT" | grep -q "TEST-MENU omitido"; then
+  echo "OK modal: omitido (sin partidas)."
+elif ! echo "$OUT" | grep -q "TEST-MENU abre=True"; then
+  echo "FALLA modal: no abrió con X."; FALLO=1
+elif ! echo "$OUT" | grep -q "TEST-MENU cancela=True"; then
+  echo "FALLA modal: no cerró con Cancelar."; FALLO=1
+elif ! echo "$OUT" | grep -q "TEST-MENU esc=True"; then
+  echo "FALLA modal: no cerró con Esc."; FALLO=1
+else
+  echo "OK modal: abre, cancela y Esc."
+fi
+
+echo ""
+if [ "$FALLO" != "0" ]; then echo "PRUEBAS: FALLA"; exit 1; fi
+echo "PRUEBAS: PASA (8/8)"

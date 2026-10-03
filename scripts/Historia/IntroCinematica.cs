@@ -48,6 +48,7 @@ public partial class IntroCinematica : CanvasLayer
 	float tiempo;
 	bool terminada;
 	bool pausaSuelta;
+	readonly SaltoHold salto = new();
 
 	public override void _Ready()
 	{
@@ -84,7 +85,7 @@ public partial class IntroCinematica : CanvasLayer
 		lblSub.OffsetTop = -160; lblSub.OffsetBottom = -90;
 		AddChild(lblSub);
 
-		lblSaltar = new Label { Text = "Esc / Espacio: saltar ▸" };
+		lblSaltar = new Label { Text = "Mantené ESPACIO o ESC para saltar" };
 		lblSaltar.AddThemeFontSizeOverride("font_size", 14);
 		lblSaltar.AddThemeColorOverride("font_color", new Color(0.7f, 0.7f, 0.7f));
 		lblSaltar.SetAnchorsPreset(Control.LayoutPreset.BottomWide);
@@ -219,6 +220,10 @@ public partial class IntroCinematica : CanvasLayer
 			fade.Color = c;
 		}
 		if (tiempo >= guion.Length * PlanoSeg) Terminar();
+		// Salto con mantener (un toque sin querer no salta nada).
+		if (salto.Procesar(d)) { Terminar(); return; }
+		if (lblSaltar != null)
+			lblSaltar.Text = salto.Manteniendo ? $"Saltando {salto.Barra()}" : "Mantené ESPACIO o ESC para saltar";
 	}
 
 	/// <summary>El tipo entra caminando en el plano 1 y frena junto al prota.</summary>
@@ -240,23 +245,14 @@ public partial class IntroCinematica : CanvasLayer
 		if (brazoDerT != null && IsInstanceValid(brazoDerT)) brazoDerT.Rotation = new Vector3(amp * 0.7f, 0, 0);
 	}
 
+	/// <summary>_Input para ganarle al Player y a Pausa. Sin click (se
+	/// dispara sin querer): solo registra mantener para el SaltoHold.</summary>
 	public override void _Input(InputEvent @event)
 	{
 		if (!Visible || terminada) return;
-		if (@event is InputEventMouseButton mb && mb.Pressed &&
-			(mb.ButtonIndex == MouseButton.Left || mb.ButtonIndex == MouseButton.Right))
-		{
-			Terminar();
-			GetViewport().SetInputAsHandled();
-			return;
-		}
-		if (@event is not InputEventKey k || !k.Pressed || k.Echo) return;
-		if (k.PhysicalKeycode == Key.Escape || k.PhysicalKeycode == Key.Space ||
-			k.PhysicalKeycode == Key.Enter || k.PhysicalKeycode == Key.KpEnter)
-		{
-			Terminar();
-			GetViewport().SetInputAsHandled();
-		}
+		if (@event is not InputEventKey k || k.Echo) return;
+		if (k.Pressed) salto.AlPresionar(k.PhysicalKeycode);
+		else salto.AlSoltar(k.PhysicalKeycode);
 	}
 
 	public void Terminar()

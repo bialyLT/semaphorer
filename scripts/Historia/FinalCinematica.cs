@@ -23,6 +23,7 @@ public partial class FinalCinematica : CanvasLayer
 	ColorRect? barraSup;
 	ColorRect? barraInf;
 	Label? lblTitulo;
+	Label? lblSaltar;
 
 	Node3D? tipo;
 	Node3D? prota;
@@ -35,6 +36,7 @@ public partial class FinalCinematica : CanvasLayer
 	float tTotal;
 	bool terminada;
 	bool pausaSuelta;
+	readonly SaltoHold salto = new();
 	Node3D? jugadorMovido;
 	Vector3 posJugador = Vector3.Zero;
 	Vector3 miraCruce = Vector3.Zero;
@@ -67,6 +69,14 @@ public partial class FinalCinematica : CanvasLayer
 		lblTitulo.OffsetLeft = -400; lblTitulo.OffsetRight = 400;
 		lblTitulo.OffsetTop = -60; lblTitulo.OffsetBottom = 60;
 		AddChild(lblTitulo);
+
+		lblSaltar = new Label { Text = "Mantené ESPACIO o ESC para saltar" };
+		lblSaltar.AddThemeFontSizeOverride("font_size", 14);
+		lblSaltar.AddThemeColorOverride("font_color", new Color(0.7f, 0.7f, 0.7f));
+		lblSaltar.SetAnchorsPreset(Control.LayoutPreset.BottomWide);
+		lblSaltar.HorizontalAlignment = HorizontalAlignment.Center;
+		lblSaltar.OffsetTop = -78; lblSaltar.OffsetBottom = -54;
+		AddChild(lblSaltar);
 
 		fade = new ColorRect { Color = new Color(0, 0, 0, 0f) };
 		fade.SetAnchorsPreset(Control.LayoutPreset.FullRect);
@@ -191,6 +201,11 @@ public partial class FinalCinematica : CanvasLayer
 		float d = (float)delta;
 		tFase += d;
 		tTotal += d;
+		// Salto con mantener (un Esc sin querer ya no salta nada). En fase 4
+		// (ya saltando) se deja correr el fundido hasta Terminar.
+		if (fase != 4 && salto.Procesar(d)) { TerminarTodo(); return; }
+		if (lblSaltar != null)
+			lblSaltar.Text = salto.Manteniendo ? $"Saltando {salto.Barra()}" : "Mantené ESPACIO o ESC para saltar";
 		// Fundido de entrada: tapa el teleport al set (solo al inicio).
 		if (tTotal < 0.8f && (fase == 0 || fase == 1))
 			PonerFade(Colors.Black, Mathf.Clamp(1f - tTotal / 0.8f, 0f, 1f));
@@ -297,12 +312,11 @@ public partial class FinalCinematica : CanvasLayer
 	public override void _Input(InputEvent @event)
 	{
 		if (!Visible || terminada) return;
-		// Esc = skip global (los hijos no lo manejan a propósito).
-		if (@event is InputEventKey k && k.Pressed && !k.Echo && k.PhysicalKeycode == Key.Escape)
-		{
-			TerminarTodo();
-			GetViewport().SetInputAsHandled();
-		}
+		// Esc/otros solo registran mantener (el skip global es con hold).
+		// Los hijos no manejan Esc a propósito.
+		if (@event is not InputEventKey k || k.Echo) return;
+		if (k.Pressed) salto.AlPresionar(k.PhysicalKeycode);
+		else salto.AlSoltar(k.PhysicalKeycode);
 	}
 
 	/// <summary>Skip: cierra UIs, va al negro y termina (igual guarda el final).</summary>

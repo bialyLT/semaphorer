@@ -14,6 +14,14 @@ public partial class Menu : CanvasLayer
 	Label? lblOpciones;
 	readonly Dictionary<Button, int> armados = new();
 
+	// --- Modal de borrado (la X armada se tocaba sin querer) ---
+	ColorRect? modalFondo;
+	Label? modalTitulo;
+	Label? modalDetalle;
+	Button? btnModalBorrar;
+	Button? btnModalCancelar;
+	int slotPendiente;
+
 	TutorialUI? tutorial;
 
 	public override void _Ready()
@@ -119,6 +127,96 @@ public partial class Menu : CanvasLayer
 		version.AddThemeColorOverride("font_color", new Color(0.5f, 0.5f, 0.55f));
 		version.HorizontalAlignment = HorizontalAlignment.Center;
 		caja.AddChild(version);
+
+		ConstruirModalBorrar();
+	}
+
+	/// <summary>Modal de confirmación para borrar (último, así dibuja arriba).</summary>
+	void ConstruirModalBorrar()
+	{
+		modalFondo = new ColorRect { Name = "ModalBorrarFondo", Color = new Color(0, 0, 0, 0.7f), Visible = false };
+		modalFondo.SetAnchorsPreset(Control.LayoutPreset.FullRect);
+		AddChild(modalFondo);
+
+		var centro = new CenterContainer();
+		centro.SetAnchorsPreset(Control.LayoutPreset.FullRect);
+		modalFondo.AddChild(centro);
+
+		var mp = new PanelContainer();
+		mp.AddThemeStyleboxOverride("panel", UiTheme.PanelBase());
+		mp.CustomMinimumSize = new Vector2(440, 0);
+		centro.AddChild(mp);
+
+		var caja = new VBoxContainer();
+		caja.AddThemeConstantOverride("separation", 10);
+		mp.AddChild(caja);
+
+		modalTitulo = new Label { Text = "¿Borrar partida?" };
+		modalTitulo.AddThemeFontSizeOverride("font_size", 26);
+		modalTitulo.AddThemeColorOverride("font_color", UiTheme.Mal);
+		modalTitulo.HorizontalAlignment = HorizontalAlignment.Center;
+		caja.AddChild(modalTitulo);
+
+		modalDetalle = new Label { AutowrapMode = TextServer.AutowrapMode.WordSmart };
+		modalDetalle.AddThemeFontSizeOverride("font_size", 16);
+		modalDetalle.AddThemeColorOverride("font_color", UiTheme.Texto);
+		modalDetalle.HorizontalAlignment = HorizontalAlignment.Center;
+		caja.AddChild(modalDetalle);
+
+		var aviso = new Label { Text = "Se pierde todo: plata, mejoras y progreso." };
+		aviso.AddThemeFontSizeOverride("font_size", 14);
+		aviso.AddThemeColorOverride("font_color", UiTheme.Gris);
+		aviso.HorizontalAlignment = HorizontalAlignment.Center;
+		caja.AddChild(aviso);
+
+		var fila = new HBoxContainer { Alignment = BoxContainer.AlignmentMode.Center };
+		fila.AddThemeConstantOverride("separation", 16);
+		caja.AddChild(fila);
+
+		btnModalBorrar = new Button { Text = "Borrar", CustomMinimumSize = new Vector2(130, 44) };
+		btnModalBorrar.AddThemeColorOverride("font_color", UiTheme.Mal);
+		btnModalBorrar.Pressed += OnModalBorrar;
+		fila.AddChild(btnModalBorrar);
+
+		btnModalCancelar = new Button { Text = "Cancelar", CustomMinimumSize = new Vector2(130, 44) };
+		btnModalCancelar.Pressed += OcultarModalBorrar;
+		fila.AddChild(btnModalCancelar);
+		UiTheme.BotonesFoco(btnModalBorrar, btnModalCancelar);
+	}
+
+	void MostrarModalBorrar(int slot, string detalle)
+	{
+		slotPendiente = slot;
+		if (modalTitulo != null) modalTitulo.Text = $"¿Borrar partida {slot}?";
+		if (modalDetalle != null) modalDetalle.Text = detalle;
+		if (modalFondo != null) modalFondo.Visible = true;
+		// Foco en lo seguro: Enter cancela, hay que elegir Borrar a propósito.
+		if (btnModalCancelar != null) UiTheme.FocoInicial(btnModalCancelar);
+	}
+
+	void OcultarModalBorrar()
+	{
+		if (modalFondo != null) modalFondo.Visible = false;
+		slotPendiente = 0;
+	}
+
+	void OnModalBorrar()
+	{
+		if (slotPendiente < 1) { OcultarModalBorrar(); return; }
+		SaveSystem.BorrarSlot(slotPendiente);
+		OcultarModalBorrar();
+		RefrescarSlots();
+	}
+
+	/// <summary>Esc cierra el modal (no hace nada más en el menú).</summary>
+	public override void _Input(InputEvent @event)
+	{
+		if (modalFondo == null || !modalFondo.Visible) return;
+		if (@event is InputEventKey k && k.Pressed && !k.Echo && k.PhysicalKeycode == Key.Escape)
+		{
+			OcultarModalBorrar();
+			GetViewport().SetInputAsHandled();
+		}
 	}
 
 	void RefrescarSlots()
@@ -134,11 +232,12 @@ public partial class Menu : CanvasLayer
 			fila.AddThemeConstantOverride("separation", 8);
 			cajaSlots.AddChild(fila);
 
+			string detalle = res.Existe
+				? $"Partida {slot}: {EmojiOficio(res.Oficio)} {NombreOficio(res.Oficio)} · {Ciudades.Nombre(res.Ciudad)} · ${res.Coins} · {res.Items} mejoras · escondite ${res.Guardado}{(res.FinalVisto ? " · ★ sueño cumplido" : "")}"
+				: $"Partida {slot}: vacía";
 			var info = new Label
 			{
-				Text = res.Existe
-					? $"Partida {slot}: {EmojiOficio(res.Oficio)} {NombreOficio(res.Oficio)} · {Ciudades.Nombre(res.Ciudad)} · ${res.Coins} · {res.Items} mejoras · escondite ${res.Guardado}{(res.FinalVisto ? " · ★ sueño cumplido" : "")}"
-					: $"Partida {slot}: vacía",
+				Text = detalle,
 				SizeFlagsHorizontal = Control.SizeFlags.ExpandFill
 			};
 			info.AddThemeFontSizeOverride("font_size", 17);
@@ -164,12 +263,7 @@ public partial class Menu : CanvasLayer
 			{
 				var bBorrar = new Button { Text = "X" };
 				bBorrar.FocusMode = Control.FocusModeEnum.All;
-				bBorrar.Pressed += () =>
-				{
-					if (!Confirmado(bBorrar, "¿X?")) return; // queda armado
-					SaveSystem.BorrarSlot(slot);
-					RefrescarSlots();
-				};
+				bBorrar.Pressed += () => MostrarModalBorrar(slot, detalle);
 				fila.AddChild(bBorrar);
 			}
 		}

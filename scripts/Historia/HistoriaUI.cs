@@ -60,6 +60,16 @@ public partial class HistoriaUI : CanvasLayer
 	{
 		Visible = true;
 		Input.MouseMode = Input.MouseModeEnum.Visible;
+		// El Player ya cargó con el oficio por defecto y su herramienta se
+		// vería flotando tras el panel: aún no sabés de qué vas a laburar.
+		jugadorOculto = GetParent()?.GetNodeOrNull<Node3D>("Player")
+			?? GetTree()?.CurrentScene?.GetNodeOrNull<Node3D>("Player");
+		if (jugadorOculto != null && IsInstanceValid(jugadorOculto))
+		{
+			jugadorEraVisible = jugadorOculto.Visible;
+			jugadorOculto.Visible = false;
+		}
+		else jugadorOculto = null;
 		UiPila.PedirPausa(GetTree(), "historia");
 		if (btnTirar != null) UiTheme.FocoInicial(btnTirar);
 	}
@@ -198,11 +208,17 @@ public partial class HistoriaUI : CanvasLayer
 	}
 
 	bool pausaSuelta;
+	Node3D? jugadorOculto;
+	bool jugadorEraVisible = true;
 	void OnEmpezar()
 	{
 		if (resultado == null) return;
 		Visible = false;
 		Input.MouseMode = Input.MouseModeEnum.Captured;
+		// El oficio ya se eligió: la herramienta puede aparecer.
+		if (jugadorOculto != null && IsInstanceValid(jugadorOculto))
+			jugadorOculto.Visible = jugadorEraVisible;
+		jugadorOculto = null;
 		if (!pausaSuelta) { UiPila.SoltarPausa(GetTree(), "historia"); pausaSuelta = true; }
 		Terminada?.Invoke(resultado);
 		EmitSignal(SignalName.HistoriaTerminada, resultado);
