@@ -20,6 +20,7 @@ MEMORIA.md
 
 # Tooling del agente (config local, no es parte del juego)
 .opencode/
+.atl/
 
 # Landing page (vive en su propio repo: semaphorer-web)
 landing-web/

@@ -285,3 +285,24 @@ for ci, ac in enumerate(AC_JUEGO):
 guardar("musica_juego", loop_suave(normalizar(juego), 0.3))
 
 print("OK: 10 wavs en audio/. Reemplazá cualquier archivo por una grabación real con el mismo nombre.")
+
+# 11. Vidrio roto: golpe seco + estallido brillante + tintineos que caen.
+n = int(0.55 * SR)
+env = adsr(n, a=0.003, r=0.85)
+vidrio = []
+prev = 0.0
+pings = [(5233, 0.05), (4186, 0.12), (6272, 0.19), (3520, 0.27)]
+for i in range(n):
+    t = i / SR
+    x = random.uniform(-1, 1)
+    hp = x - prev  # estallido inicial bien brillante
+    prev = x
+    v = hp * math.exp(-t * 18) * 0.9
+    v += 0.25 * seno(180, t) * math.exp(-t * 25)  # golpe grave del impacto
+    for f, t0 in pings:
+        if t >= t0:
+            v += 0.3 * seno(f, t - t0) * math.exp(-(t - t0) * 22)
+    vidrio.append(v * env[i] * 0.5)
+guardar("vidrio", vidrio)
+
+print("OK: 11 wavs en audio/.")

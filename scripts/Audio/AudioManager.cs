@@ -21,7 +21,7 @@ public partial class AudioManager : Node3D
 	static readonly Dictionary<string, float> VolumenDb = new()
 	{
 		{ "monedas", -4f }, { "bocina", -2f }, { "sirena", -6f },
-		{ "frote", -8f }, { "abrir", -8f }, { "negado", -6f },
+		{ "frote", -8f }, { "abrir", -8f }, { "negado", -6f }, { "vidrio", -2f },
 	};
 
 	readonly RandomNumberGenerator rng = new();

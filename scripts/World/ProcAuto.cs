@@ -62,6 +62,11 @@ public static class ProcAuto
 		{
 			Parte("Cabina", new BoxMesh { Size = new Vector3(1.6f, 0.6f, 2f) },
 				new Vector3(0, 1.4f, 0.2f), matCar);
+			// Ventanillas laterales (puntos de interacción lateral).
+			Parte("VentanillaIzq", new BoxMesh { Size = new Vector3(0.04f, 0.4f, 1.8f) },
+				new Vector3(-0.81f, 1.4f, 0.2f), matVidrio);
+			Parte("VentanillaDer", new BoxMesh { Size = new Vector3(0.04f, 0.4f, 1.8f) },
+				new Vector3(0.81f, 1.4f, 0.2f), matVidrio);
 			if (tipo == "taxi")
 			{
 				// Cartel del techo

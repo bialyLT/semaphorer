@@ -62,7 +62,8 @@
     "radio_vision": 30.0,
     "decaimiento": 6.0,
     "ritmo_base": 15.0,
-    "tolerancia_seg": 32.0
+    "tolerancia_seg": 32.0,
+    "alerta_vidrio_roto": 0.25
   },
   "dia_noche": {
     "duracion_dia_seg": 360.0,

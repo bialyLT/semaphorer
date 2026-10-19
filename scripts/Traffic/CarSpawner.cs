@@ -383,6 +383,39 @@ public partial class CarSpawner : Node3D
 		return max <= 0f ? 0f : max + margen;
 	}
 
+	/// <summary>
+	/// Auto al que se apunta con la guiñada (plano horizontal): por
+	/// delante, dentro del rango y a menos de `grados` del eje de vista.
+	/// El cabeceo (pitch) lo valida quien llama: acá solo importa el yaw.
+	/// Gana el más centrado.
+	/// </summary>
+	public CarAI? AutoApuntado(Vector3 origen, Vector3 dir, float rango, float grados = 14f, bool soloDetenidos = true)
+	{
+		CarAI? mejor = null;
+		float mejorAng = float.MaxValue;
+		float mejorDist = float.MaxValue;
+		float cosMin = Mathf.Cos(Mathf.DegToRad(grados));
+		Vector3 plano = new(dir.X, 0, dir.Z);
+		if (plano.LengthSquared() < 0.0001f) return null;
+		plano = plano.Normalized();
+		foreach (var c in autos)
+		{
+			if (!IsInstanceValid(c)) continue;
+			if (soloDetenidos && !c.EstaDetenido()) continue;
+			Vector3 rel = c.GlobalPosition - origen;
+			float dist = rel.Length();
+			if (dist < 0.3f || dist > rango) continue;
+			Vector3 chato = new(rel.X, 0, rel.Z);
+			if (chato.LengthSquared() < 0.0001f) continue;
+			float cosA = (chato.Normalized()).Dot(plano);
+			if (cosA < cosMin) continue;
+			float ang = Mathf.Acos(Mathf.Clamp(cosA, -1f, 1f));
+			if (ang < mejorAng - 0.005f || (Mathf.Abs(ang - mejorAng) <= 0.005f && dist < mejorDist))
+			{ mejor = c; mejorAng = ang; mejorDist = dist; }
+		}
+		return mejor;
+	}
+
 	/// <summary>Auto lavable más cercano al jugador dentro de rango.</summary>
 	public CarAI? AutoCercanoDetenido(Vector3 desde, float rango)
 	{

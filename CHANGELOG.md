@@ -3,6 +3,16 @@
 Formato: Keep a Changelog. Versiones: SemVer (`MAJOR.MINOR.PATCH`).
 Ver skill `versionado` para las reglas de bump de este proyecto.
 
+## [1.8.0] - 2026-10-19
+
+### Added
+- Ahora podés romper vidrios con click (¡la policía te mira más!).
+- El tipo de gala a veces vuelve y te ofrece una tirada de la suerte.
+
+### Fixed
+- La ruleta inicial ahora se llama La tirada de la suerte.
+- Cambios menores en los personajes de la cinemática de la introducción.
+
 ## [1.6.0] - 2026-10-03
 
 ### Added

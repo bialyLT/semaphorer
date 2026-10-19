@@ -31,6 +31,8 @@ public partial class GameManager : Node3D
 	IntroCinematica? intro;
 	ViajeCinematica? viaje;
 	FinalCinematica? final;
+	TipoCameo? cameoTipo;
+	TiradaTipoUI? tiradaTipo;
 
 	public override void _Ready()
 	{
@@ -67,6 +69,7 @@ public partial class GameManager : Node3D
 		{
 			Mejoras.ViajeRealizado += OnViaje;
 			Mejoras.CompraRealizada += RefrescarObjetivo;
+			Mejoras.CompraRealizada += IntentarCameoTipo;
 			Mejoras.FinalDesbloqueado += OnFinal;
 		}
 		if (Economia != null) Economia.CoinsChanged += OnMonedasParaObjetivo;
@@ -194,6 +197,56 @@ public partial class GameManager : Node3D
 	}
 
 	string ultimoObjetivo = "";
+
+	/// <summary>
+	/// Tras cada mejora comprada, el tipo de gala a veces vuelve a aparecer:
+	/// cruza por una vereda cercana y se va. Puro ambiente, no toca nada.
+	/// </summary>
+	void IntentarCameoTipo()
+	{
+		if (cameoTipo != null && IsInstanceValid(cameoTipo)) return;
+		if (GD.Randf() >= 0.5f) return;
+		var jugador = GetNodeOrNull<Player>("Player");
+		var jp = jugador?.GlobalPosition ?? Vector3.Zero;
+		cameoTipo = new TipoCameo();
+		AddChild(cameoTipo);
+		cameoTipo.OfertaLista += OnOfertaTipo;
+		cameoTipo.Preparar(jugador, jp);
+		Hud?.SetMensaje("Un tipo elegante anda por la cuadra...");
+	}
+
+	/// <summary>
+	/// El tipo llegó junto al jugador: le ofrece la tirada de plata.
+	/// Si hay tienda/pausa/cine abierto, sigue caminando y reintenta.
+	/// </summary>
+	void OnOfertaTipo()
+	{
+		if (cameoTipo == null || !IsInstanceValid(cameoTipo)) return;
+		if (tiradaTipo != null && IsInstanceValid(tiradaTipo)) { cameoTipo.Reintentar(); return; }
+		if (GetTree() != null && GetTree().Paused) { cameoTipo.Reintentar(); return; }
+		if (Mejoras != null && Mejoras.Abierta) { cameoTipo.Reintentar(); return; }
+		if (intro != null || historia != null || viaje != null || final != null) { cameoTipo.Reintentar(); return; }
+		tiradaTipo = new TiradaTipoUI();
+		AddChild(tiradaTipo);
+		tiradaTipo.Terminada += OnTiradaTipoCerrada;
+		tiradaTipo.Mostrar();
+	}
+
+	/// <summary>Se cerró la tirada: acredita el premio y el tipo se va.</summary>
+	void OnTiradaTipoCerrada(int premio)
+	{
+		if (tiradaTipo != null)
+		{
+			tiradaTipo.Terminada -= OnTiradaTipoCerrada;
+			tiradaTipo = null;
+		}
+		if (Economia != null && premio > 0)
+		{
+			Economia.AddCoins(premio);
+			Hud?.SetOk($"El tipo te pagó ${premio}. ¡Seguí laburando!");
+		}
+		if (cameoTipo != null && IsInstanceValid(cameoTipo)) cameoTipo.Despedir();
+	}
 
 	/// <summary>Viaje: cinemática (el re-skin corre bajo negro) y objetivo al día.</summary>
 	void OnViaje(int nueva)
@@ -450,6 +503,7 @@ public partial class GameManager : Node3D
 		{
 			Mejoras.ViajeRealizado -= OnViaje;
 			Mejoras.CompraRealizada -= RefrescarObjetivo;
+			Mejoras.CompraRealizada -= IntentarCameoTipo;
 			Mejoras.FinalDesbloqueado -= OnFinal;
 		}
 		var inv = InventarioRef();
@@ -464,6 +518,8 @@ public partial class GameManager : Node3D
 		if (intro != null) intro.Terminada -= OnIntroTerminada;
 		if (viaje != null) viaje.Terminada -= OnViajeTerminada;
 		if (final != null) final.Terminada -= OnFinalTerminada;
+		if (cameoTipo != null && IsInstanceValid(cameoTipo)) cameoTipo.OfertaLista -= OnOfertaTipo;
+		if (tiradaTipo != null && IsInstanceValid(tiradaTipo)) tiradaTipo.Terminada -= OnTiradaTipoCerrada;
 	}
 
 	public override void _Process(double delta)

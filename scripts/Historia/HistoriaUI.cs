@@ -3,7 +3,7 @@ using System;
 using System.Collections.Generic;
 
 /// <summary>
-/// Prólogo "La última tirada" (Fase 2): historia de las apuestas + ruleta
+/// Prólogo "La tirada de la suerte" (Fase 2): historia de las apuestas + ruleta
 /// de la suerte. Se muestra pausando el juego al crear partida nueva.
 /// Al terminar emite Terminada(oficioId) y el GameManager aplica los $50,
 /// guarda el oficio y sigue con el tutorial si corresponde.
@@ -98,7 +98,7 @@ public partial class HistoriaUI : CanvasLayer
 		caja.AddThemeConstantOverride("separation", 12);
 		margen.AddChild(caja);
 
-		var titulo = new Label { Text = "🎲 LA ÚLTIMA TIRADA" };
+		var titulo = new Label { Text = "🎲 LA TIRADA DE LA SUERTE" };
 		titulo.AddThemeFontSizeOverride("font_size", 34);
 		titulo.AddThemeColorOverride("font_color", new Color(1, 0.75f, 0.2f));
 		titulo.HorizontalAlignment = HorizontalAlignment.Center;
@@ -106,7 +106,7 @@ public partial class HistoriaUI : CanvasLayer
 
 		var historia = new Label
 		{
-			Text = "Te quedaste en la calle por las apuestas.\nTe quedan $50 y una última oportunidad: un tipo te ofrece una última tirada de la suerte.\nDicen que una vez salió el millón...",
+			Text = "Te quedaste en la calle por las apuestas.\nTe quedan $50 y una última oportunidad: un tipo te ofrece una última tirada de la suerte.\nPodés ganarte 1 millón de dólares.",
 			HorizontalAlignment = HorizontalAlignment.Center,
 			AutowrapMode = TextServer.AutowrapMode.WordSmart
 		};

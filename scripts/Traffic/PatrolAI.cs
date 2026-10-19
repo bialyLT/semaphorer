@@ -126,6 +126,13 @@ public partial class PatrolAI : CarAI
 	/// <summary>Restaura la atención al cargar partida (Paso 5).</summary>
 	public void FijarTiempoVisto(float t) => tiempoVisto = Mathf.Max(0f, t);
 
+	/// <summary>
+	/// Suma atención policial directa (ej: romper un vidrio). Fracción 0..1
+	/// de la tolerancia; al llenarse decomisa igual que mirando.
+	/// </summary>
+	public void Alertar(float fraccion) =>
+		tiempoVisto = Mathf.Min(tiempoVisto + toleranciaSeg * Mathf.Max(0f, fraccion), toleranciaSeg);
+
 	void Decomisar()
 	{
 		tiempoVisto = 0f;

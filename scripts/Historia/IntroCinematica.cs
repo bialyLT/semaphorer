@@ -153,24 +153,62 @@ public partial class IntroCinematica : CanvasLayer
 		raiz.AddChild(protagonista);
 		protagonista.GlobalPosition = posSuelo + new Vector3(0, 0.24f, 0);
 		protagonista.RotationDegrees = new Vector3(90, 0, 12);
-		// El tipo: abrigo oscuro + gorra oscura, misterioso.
+		// El tipo: traje de gala (saco y pantalón negros, camisa blanca,
+		// moño rojo) + galera negra. Misterioso y elegante.
 		tipo = ProcPeaton.Build(
-			new Color(0.16f, 0.16f, 0.2f),
-			new Color(0.1f, 0.1f, 0.13f),
+			new Color(0.08f, 0.08f, 0.1f),
+			new Color(0.07f, 0.07f, 0.09f),
 			new Color(0.8f, 0.58f, 0.42f),
-			true, new Color(0.05f, 0.05f, 0.07f));
+			false);
 		tipo.Name = "CineTipo";
-		// Recorrido dentro del parche despejado (nunca a la calle).
+		VestirGala(tipo);
+		// Empieza del otro lado de la calle (vereda oeste-sur, despejada:
+		// el árbol A6 queda a 6m y el farol F2 a 1.6m del paso) y cruza
+		// hacia el protagonista.
 		posTipoFin = posSuelo + new Vector3(-1.6f, 0, 1.2f);
-		posTipoInicio = posSuelo + new Vector3(-2.5f, 0, 3.0f);
+		posTipoInicio = posSuelo + new Vector3(-14f, 0, 0.5f);
 		raiz.AddChild(tipo);
 		tipo.GlobalPosition = new Vector3(posTipoInicio.X, ProcPeaton.YVereda, posTipoInicio.Z);
+		// No existe hasta que termina el mensaje 1 (ver AnimarTipo).
+		tipo.Visible = false;
 		MirarA(tipo, posSuelo);
 		pataIzqT = tipo.GetNodeOrNull<Node3D>("Cuerpo/PataIzq");
 		pataDerT = tipo.GetNodeOrNull<Node3D>("Cuerpo/PataDer");
 		brazoIzqT = tipo.GetNodeOrNull<Node3D>("Cuerpo/BrazoIzq");
 		brazoDerT = tipo.GetNodeOrNull<Node3D>("Cuerpo/BrazoDer");
 	}
+
+	/// <summary>Galera + camisa + moño sobre el peatón (hijos del Cuerpo/
+	/// Cabeza: no tocan los pivotes que anima AnimarTipo).</summary>
+	public static void VestirGala(Node3D tipoGala)
+		{
+		var negro = new StandardMaterial3D { AlbedoColor = new Color(0.04f, 0.04f, 0.05f), Roughness = 0.6f };
+		var blanco = new StandardMaterial3D { AlbedoColor = new Color(0.95f, 0.95f, 0.93f), Roughness = 0.8f };
+		var rojo = new StandardMaterial3D { AlbedoColor = new Color(0.75f, 0.1f, 0.12f), Roughness = 0.7f };
+		var cuerpo = tipoGala.GetNodeOrNull<Node3D>("Cuerpo");
+		if (cuerpo != null)
+		{
+			// Pechera blanca sobre el torso (frente +Z).
+			var camisa = new MeshInstance3D { Name = "Camisa", Mesh = new BoxMesh { Size = new Vector3(0.2f, 0.5f, 0.03f) }, Position = new Vector3(0, 1.2f, 0.125f) };
+			camisa.SetSurfaceOverrideMaterial(0, blanco);
+			cuerpo.AddChild(camisa);
+			// Moño rojo al cuello.
+			var mono = new MeshInstance3D { Name = "Mono", Mesh = new BoxMesh { Size = new Vector3(0.16f, 0.06f, 0.06f) }, Position = new Vector3(0, 1.48f, 0.13f) };
+			mono.SetSurfaceOverrideMaterial(0, rojo);
+			cuerpo.AddChild(mono);
+		}
+		var cabeza = tipoGala.GetNodeOrNull<Node3D>("Cuerpo/Cabeza");
+		if (cabeza != null)
+		{
+			// Galera: ala ancha + copa alta.
+			var ala = new MeshInstance3D { Name = "GaleraAla", Mesh = new CylinderMesh { TopRadius = 0.22f, BottomRadius = 0.22f, Height = 0.03f }, Position = new Vector3(0, 0.24f, 0) };
+			ala.SetSurfaceOverrideMaterial(0, negro);
+			cabeza.AddChild(ala);
+			var copa = new MeshInstance3D { Name = "GaleraCopa", Mesh = new CylinderMesh { TopRadius = 0.13f, BottomRadius = 0.13f, Height = 0.24f }, Position = new Vector3(0, 0.37f, 0) };
+			copa.SetSurfaceOverrideMaterial(0, negro);
+			cabeza.AddChild(copa);
+		}
+		}
 
 	static void MirarA(Node3D n, Vector3 objetivo)
 	{
@@ -226,12 +264,20 @@ public partial class IntroCinematica : CanvasLayer
 			lblSaltar.Text = salto.Manteniendo ? $"Saltando {salto.Barra()}" : "Mantené ESPACIO o ESC para saltar";
 	}
 
-	/// <summary>El tipo entra caminando en el plano 1 y frena junto al prota.</summary>
+	/// <summary>El tipo aparece al terminar el mensaje 1, cruza la calle
+	/// y frena junto al prota.</summary>
 	void AnimarTipo()
 	{
 		if (tipo == null || !IsInstanceValid(tipo)) return;
-		// Entra entre el seg 5 y el 12 (cubre fin del plano 0 + plano 1).
-		float t = Mathf.Clamp((tiempo - 5f) / 7f, 0f, 1f);
+		// Aparece cuando termina el tiempo del mensaje 1 (fin del plano 0)
+		// y cruza desde el otro lado de la calle hasta el seg 12.5.
+		if (tiempo < PlanoSeg) { tipo.Visible = false; return; }
+		if (!tipo.Visible)
+		{
+			tipo.Visible = true;
+			tipo.GlobalPosition = new Vector3(posTipoInicio.X, ProcPeaton.YVereda, posTipoInicio.Z);
+		}
+		float t = Mathf.Clamp((tiempo - PlanoSeg) / (12.5f - PlanoSeg), 0f, 1f);
 		float ts = t * t * (3f - 2f * t);
 		Vector3 p = posTipoInicio.Lerp(posTipoFin, ts);
 		bool caminando = t > 0f && t < 1f;

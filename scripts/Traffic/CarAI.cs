@@ -93,6 +93,10 @@ public partial class CarAI : Node3D
 
 	MeshInstance3D? vidrio;
 	StandardMaterial3D? matVidrio;
+	/// <summary>Material por vidrio (parabrisas + ventanillas).</summary>
+	readonly System.Collections.Generic.Dictionary<string, StandardMaterial3D> matsVidrio = new();
+	/// <summary>Vidrio roto por el vandalismo (para no repintarlo al lavar).</summary>
+	MeshInstance3D? vidrioRotoNodo;
 
 	/// <summary>
 	/// En _PhysicsProcess (no _Process): al mover el cuerpo por física,
@@ -193,6 +197,7 @@ public partial class CarAI : Node3D
 
 	public bool EstaDetenido()
 	{
+		if (SiempreDetenido) return true; // test de vidrios: estacionados libres
 		if (Semaforo == null) return false;
 		// En verde solo cuenta si está en gracia (amable esperando a medias).
 		if (!Semaforo.EsRojo() && !EnGracia()) return false;
@@ -224,31 +229,189 @@ public partial class CarAI : Node3D
 		Atendido = false;
 		InicioServicio = 0;
 		GraciaHasta = 0;
+		VidrioRoto = false;
+		vidrioRotoNodo = null;
+		CachearVidrios();
+		var visual = GetChildOrNull<Node3D>(0);
+		if (visual != null)
+		{
+			foreach (var nombre in matsVidriosNombres)
+			{
+				var v = visual.GetNodeOrNull<MeshInstance3D>(nombre);
+				v?.GetNodeOrNull<Node3D>("Trincado")?.QueueFree();
+			}
+		}
+		foreach (var m in matsVidrio.Values) m.Roughness = 0.15f;
 		RefrescarVidrio(0f);
 	}
 
-	void CachearVidrio()
+	/// <summary>¿Le rompieron un vidrio en este rojo? (vandalismo con click).</summary>
+	public bool VidrioRoto { get; private set; }
+
+	/// <summary>Solo-dev (test de vidrios): detenido siempre, sin pedir rojo.</summary>
+	public bool SiempreDetenido = false;
+
+	/// <summary>Nombres de vidrios rompibles (el bus usa la banda lateral).</summary>
+	static readonly string[] matsVidriosNombres =
+		{ "Parabrisas", "VentanillaIzq", "VentanillaDer", "Ventanas" };
+
+	/// <summary>
+	/// Rompe el vidrio más cercano al rayo de puntería (lo que se mira,
+	/// no lo más cercano al cuerpo): queda trincado (estrella en el punto
+	/// del rayo) y el conductor se pone furioso (puede no pagar).
+	/// Una vez por rojo.
+	/// </summary>
+	public bool RomperVidrio(Vector3 origenRayo, Vector3 dirRayo)
 	{
-		if (vidrio != null) return;
+		if (VidrioRoto) return false;
+		CachearVidrios();
+		if (matsVidrio.Count == 0) return false;
+		dirRayo = dirRayo.Normalized();
+		// Primer vidrio que toca el rayo desde tu lado (intersección con el
+		// cuadrilátero de cada vidrio): el de entrada se rompe, nunca el de
+		// atrás. Así pegar de un lado siempre rompe ese lado o el frente.
+		MeshInstance3D? elegido = null;
+		string nombreElegido = "";
+		float mejorT = float.MaxValue;
+		Vector3 mejorHit = Vector3.Zero;
 		var visual = GetChildOrNull<Node3D>(0);
-		vidrio = visual?.GetNodeOrNull<MeshInstance3D>("Parabrisas");
-		if (vidrio == null) return;
-		matVidrio = new StandardMaterial3D
+		foreach (var kv in matsVidrio)
 		{
-			Transparency = BaseMaterial3D.TransparencyEnum.Alpha,
-			Roughness = 0.15f
-		};
-		vidrio.SetSurfaceOverrideMaterial(0, matVidrio);
+			var nodo = visual?.GetNodeOrNull<MeshInstance3D>(kv.Key);
+			if (nodo == null || !IsInstanceValid(nodo)) continue;
+			if (nodo.Mesh is not BoxMesh caja) continue;
+			// Eje fino = normal de la cara (en mundo, con la rotación del auto).
+			Vector3 tam = caja.Size;
+			Vector3 normalL = tam.X <= tam.Y && tam.X <= tam.Z ? Vector3.Right : Vector3.Forward;
+			Vector3 normal = (nodo.GlobalTransform.Basis * normalL).Normalized();
+			// Ejes del plano (los dos más anchos), en mundo.
+			Vector3 e1 = (nodo.GlobalTransform.Basis * (normalL == Vector3.Right ? Vector3.Forward : Vector3.Right)).Normalized();
+			Vector3 e2 = (nodo.GlobalTransform.Basis * Vector3.Up).Normalized();
+			float denom = dirRayo.Dot(normal);
+			if (Mathf.Abs(denom) < 0.0001f) continue;
+			float t = (nodo.GlobalPosition - origenRayo).Dot(normal) / denom;
+			if (t < 0f || t > 30f) continue;
+			Vector3 hit = origenRayo + dirRayo * t;
+			Vector3 d = hit - nodo.GlobalPosition;
+			float hu = (normalL == Vector3.Right ? tam.Z : tam.X) / 2f + 0.15f;
+			float hv = tam.Y / 2f + 0.15f;
+			if (Mathf.Abs(d.Dot(e1)) > hu || Mathf.Abs(d.Dot(e2)) > hv) continue;
+			if (t < mejorT) { mejorT = t; mejorHit = hit; elegido = nodo; nombreElegido = kv.Key; }
+		}
+		if (elegido == null || !matsVidrio.TryGetValue(nombreElegido, out var mat)) return false;
+		VidrioRoto = true;
+		vidrioRotoNodo = elegido;
+		mat.AlbedoColor = new Color(0.82f, 0.88f, 0.95f, 0.9f);
+		mat.Roughness = 0.6f;
+		// La estrella va donde el rayo roza el vidrio (en su cara).
+		// (mejorHit ya está sobre la cara externa del vidrio elegido)
+		Vector3 dirLocal = (elegido.GlobalTransform.Basis.Inverse() * dirRayo).Normalized();
+		PonerTrincado(elegido, elegido.ToLocal(mejorHit), dirLocal);
+		Humor = "enojado";
+		return true;
 	}
 
-	/// <summary>Tiñe el parabrisas según la mugre restante (marrón opaco → celeste).</summary>
+	/// <summary>
+	/// Estrella de grietas sobre la cara externa del vidrio (la que mira al
+	/// rayo), centrada en el impacto y 1.5cm por fuera para que no quede
+	/// tapada por el vidrio. La cara se detecta por el eje más fino del
+	/// BoxMesh (parabrisas: +Z, ventanillas: ±X) y la estrella se rota a ella.
+	/// </summary>
+	static void PonerTrincado(MeshInstance3D vidrioNodo, Vector3 impactoRel, Vector3 dirLocal)
+	{
+		if (vidrioNodo.GetNodeOrNull<Node3D>("Trincado") != null) return;
+		Vector3 tam = (vidrioNodo.Mesh as BoxMesh)?.Size ?? new Vector3(1.5f, 0.55f, 0.08f);
+		bool deCostado = tam.X <= tam.Y && tam.X <= tam.Z;
+		// El rayo entra por la cara opuesta a su dirección de avance.
+		float avance = deCostado ? dirLocal.X : dirLocal.Z;
+		float signo = avance < 0f ? 1f : avance > 0f ? -1f : 0f;
+		if (deCostado && signo == 0f) signo = Mathf.Sign(impactoRel.X);
+		if (signo == 0f) signo = 1f;
+		var estrella = new Node3D { Name = "Trincado" };
+		vidrioNodo.AddChild(estrella);
+		float u, v, cara;
+		if (!deCostado)
+		{
+			u = Mathf.Clamp(impactoRel.X, -tam.X / 2f + 0.1f, tam.X / 2f - 0.1f);
+			v = Mathf.Clamp(impactoRel.Y, -tam.Y / 2f + 0.08f, tam.Y / 2f - 0.08f);
+			cara = tam.Z / 2f + 0.015f;
+			estrella.Position = new Vector3(0, 0, cara);
+		}
+		else
+		{
+			u = Mathf.Clamp(impactoRel.Z, -tam.Z / 2f + 0.1f, tam.Z / 2f - 0.1f);
+			v = Mathf.Clamp(impactoRel.Y, -tam.Y / 2f + 0.08f, tam.Y / 2f - 0.08f);
+			cara = tam.X / 2f + 0.015f;
+			estrella.RotationDegrees = new Vector3(0, 90f * signo, 0);
+			estrella.Position = new Vector3(signo * cara, 0, 0);
+		}
+		var matGrieta = new StandardMaterial3D
+		{
+			AlbedoColor = new Color(0.07f, 0.08f, 0.1f),
+			Roughness = 0.9f
+		};
+		var cc = new Vector3(u, v, 0.005f);
+		var punto = new MeshInstance3D
+		{
+			Name = "Impacto",
+			Mesh = new SphereMesh { Radius = 0.06f, Height = 0.12f },
+			Position = cc
+		};
+		punto.SetSurfaceOverrideMaterial(0, matGrieta);
+		estrella.AddChild(punto);
+		for (int i = 0; i < 7; i++)
+		{
+			float ang = i * Mathf.Tau / 7f + 0.3f;
+			float largo = 0.2f + (i % 3) * 0.09f;
+			var grieta = new MeshInstance3D
+			{
+				Name = $"Grieta{i}",
+				Mesh = new BoxMesh { Size = new Vector3(0.035f, largo, 0.012f) },
+				Position = cc + new Vector3(Mathf.Cos(ang) * largo / 2f, Mathf.Sin(ang) * largo / 2f, 0),
+				Rotation = new Vector3(0, 0, ang - Mathf.Pi / 2f)
+			};
+			grieta.SetSurfaceOverrideMaterial(0, matGrieta);
+			estrella.AddChild(grieta);
+		}
+	}
+
+	void CachearVidrio() => CachearVidrios();
+
+	void CachearVidrios()
+	{
+		if (matsVidrio.Count > 0) return;
+		var visual = GetChildOrNull<Node3D>(0);
+		if (visual == null) return;
+		foreach (var nombre in matsVidriosNombres)
+		{
+			var v = visual.GetNodeOrNull<MeshInstance3D>(nombre);
+			if (v == null || matsVidrio.ContainsKey(nombre)) continue;
+			var mat = new StandardMaterial3D
+			{
+				Transparency = BaseMaterial3D.TransparencyEnum.Alpha,
+				Roughness = 0.15f
+			};
+			v.SetSurfaceOverrideMaterial(0, mat);
+			matsVidrio[nombre] = mat;
+		}
+		// Compat: parabrisas como vidrio principal.
+		vidrio = visual.GetNodeOrNull<MeshInstance3D>("Parabrisas");
+		matVidrio = matsVidrio.TryGetValue("Parabrisas", out var m) ? m : null;
+	}
+
+	/// <summary>Tiñe los vidrios según la mugre restante (marrón opaco → celeste).</summary>
 	public void RefrescarVidrio(float progresoLimpieza)
 	{
-		CachearVidrio();
-		if (matVidrio == null) return;
+		CachearVidrios();
+		if (matsVidrio.Count == 0) return;
 		float sucio = Mathf.Clamp(Suciedad * (1f - progresoLimpieza), 0f, 1f);
 		var limpio = new Color(0.6f, 0.85f, 1f, 0.45f);
 		var mugre = new Color(0.4f, 0.32f, 0.16f, 0.9f);
-		matVidrio.AlbedoColor = mugre.Lerp(limpio, 1f - sucio);
+		foreach (var m in matsVidrio.Values)
+			m.AlbedoColor = mugre.Lerp(limpio, 1f - sucio);
+		// El roto queda blanco aunque lo laven.
+		if (vidrioRotoNodo != null && IsInstanceValid(vidrioRotoNodo) &&
+			matsVidrio.TryGetValue(vidrioRotoNodo.Name, out var roto))
+			roto.AlbedoColor = new Color(0.82f, 0.88f, 0.95f, 0.9f);
 	}
 }

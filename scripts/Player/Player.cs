@@ -19,6 +19,16 @@ public partial class Player : CharacterBody3D
 	[Export] public Economy? Economia;
 	[Export] public Pausa? Pausa;
 	[Export] public MochilaUI? Mochila;
+	[Export] public AudioManager? Audio;
+
+	/// <summary>Fracción de barra policial que suma romper un vidrio (balance).</summary>
+	float alertaVidrioRoto = 0.25f;
+	/// <summary>Alcance del click para romper vidrios.</summary>
+	const float RangoVidrio = 5f;
+	/// <summary>Ventana de cabeceo (pitch) en la que vale el golpe.</summary>
+	const float PitchMinVidrio = -40f;
+	const float PitchMaxVidrio = 30f;
+	double ultimoAvisoVidrio = -99;
 
 	/// <summary>Oficio de la partida (lo eligió la tirada). Define qué hace E.</summary>
 	public string OficioActual { get; private set; } = SaveSystem.OficioDefecto;
@@ -50,6 +60,7 @@ public partial class Player : CharacterBody3D
 		if (Inventario == null) Inventario = GetNodeOrNull<Inventario>("../Inventario");
 		if (Economia == null) Economia = GetNodeOrNull<Economy>("../Economy");
 		if (Pausa == null) Pausa = GetNodeOrNull<Pausa>("../Pausa");
+		if (Audio == null) Audio = GetNodeOrNull<AudioManager>("../Audio");
 		if (Mochila == null) Mochila = GetNodeOrNull<MochilaUI>("../MochilaUI");
 		// Si la escena no lo trae, se crea acá como hijo del Player.
 		// CanvasLayer se dibuja igual en cualquier rama del árbol, y las
@@ -316,12 +327,8 @@ public partial class Player : CharacterBody3D
 
 	public override void _UnhandledInput(InputEvent @event)
 	{
-		// Solo clicks reales capturan el mouse (la rueda es scroll, no click),
-		// y nunca con menús abiertos (si no el cursor desaparece scrolleando).
-		if (@event is InputEventMouseButton mb && mb.Pressed
-			&& !PanelAbierto() && !(Pausa?.Abierta() ?? false)
-			&& (mb.ButtonIndex == MouseButton.Left || mb.ButtonIndex == MouseButton.Right))
-			Input.MouseMode = Input.MouseModeEnum.Captured;
+		// El click va en _Input (llega antes que la UI: ningún cartel
+		// del HUD puede comérselo y dejarte sin romper vidrios).
 		if (@event is InputEventMouseMotion mm && Input.MouseMode == Input.MouseModeEnum.Captured)
 		{
 			yaw -= mm.Relative.X * Ajustes.Sensibilidad;
@@ -341,6 +348,30 @@ public partial class Player : CharacterBody3D
 				else if (MejorasAbierta()) Mejoras?.Cerrar();
 				else Pausa?.Alternar();
 			}
+		}
+	}
+
+	/// <summary>
+	/// Clicks en _Input (antes que la UI): capturar mouse o romper vidrio.
+	/// Con menús abiertos no hace nada.
+	/// </summary>
+	public override void _Input(InputEvent @event)
+	{
+		// Click izquierdo = romper vidrio (apuntar al auto). Cualquier
+		// click con cursor visible captura el mouse (el primero también pega).
+		if (@event is InputEventMouseButton mb && mb.Pressed
+			&& (mb.ButtonIndex == MouseButton.Left || mb.ButtonIndex == MouseButton.Right))
+		{
+			if (PanelAbierto() || (Pausa?.Abierta() ?? false)) return;
+			if (Input.MouseMode != Input.MouseModeEnum.Captured)
+			{
+				Input.MouseMode = Input.MouseModeEnum.Captured;
+				if (mb.ButtonIndex == MouseButton.Left)
+					IntentarRomperVidrio();
+				return;
+			}
+			if (mb.ButtonIndex == MouseButton.Left)
+				IntentarRomperVidrio();
 		}
 	}
 
@@ -376,6 +407,9 @@ public partial class Player : CharacterBody3D
 			if (doc.RootElement.TryGetProperty("jugador", out var j) &&
 				j.TryGetProperty("velocidad", out var v))
 				Velocidad = (float)v.GetDouble();
+			if (doc.RootElement.TryGetProperty("policia", out var p) &&
+				p.TryGetProperty("alerta_vidrio_roto", out var a))
+				alertaVidrioRoto = (float)a.GetDouble();
 		}
 		catch (System.Exception e)
 		{
@@ -522,6 +556,74 @@ public partial class Player : CharacterBody3D
 		CarSpawner? sp = Trabajo?.Spawner ?? Malabares?.Spawner ?? Venta?.Spawner;
 		if (sp == null) return LimiteBase;
 		return Mathf.Clamp(Mathf.Max(LimiteBase, sp.AlcanceCola()), LimiteBase, LimiteSuelo);
+	}
+
+	/// <summary>Aviso con cooldown (pistas de puntería sin spamear).</summary>
+	void AvisarVidrio(string s)
+	{
+		if (Hud == null) return;
+		double ahora = Time.GetTicksMsec() / 1000.0;
+		if (ahora - ultimoAvisoVidrio < 1.2) return;
+		ultimoAvisoVidrio = ahora;
+		Hud.SetMensaje(s);
+	}
+
+	/// <summary>
+	/// Vandalismo con click: rompe el vidrio del auto detenido al que se
+	/// apunta (cono generoso, sin exigir píxel perfecto) si está a menos
+	/// de 5m. Se rompe el vidrio que da al jugador: siempre visible.
+	/// Ruido + trincado, la policía suma atención y el conductor se
+	/// enoja (puede no pagar).
+	/// </summary>
+	void IntentarRomperVidrio()
+	{
+		if (camara == null || Hud == null) return;
+		CarSpawner? sp = Trabajo?.Spawner ?? Malabares?.Spawner ?? Venta?.Spawner;
+		if (sp == null) return;
+		// Con cursor visible se apunta con el mouse; capturado, con el centro.
+		Vector3 origen, dir;
+		if (Input.MouseMode == Input.MouseModeEnum.Captured)
+		{
+			origen = camara.GlobalTransform.Origin;
+			dir = -camara.GlobalTransform.Basis.Z;
+		}
+		else
+		{
+			var mp = GetViewport().GetMousePosition();
+			origen = camara.ProjectRayOrigin(mp);
+			dir = camara.ProjectRayNormal(mp);
+		}
+		dir = dir.Normalized();
+		float cabeceo = Mathf.RadToDeg(Mathf.Asin(Mathf.Clamp(dir.Y, -1f, 1f)));
+		if (cabeceo < PitchMinVidrio || cabeceo > PitchMaxVidrio)
+		{
+			AvisarVidrio("Apuntá al vidrio de un auto detenido en rojo.");
+			return;
+		}
+		var auto = sp.AutoApuntado(origen, dir, RangoVidrio + 2f);
+		if (auto == null)
+		{
+			if (sp.AutoApuntado(origen, dir, RangoVidrio + 2f, 14f, false) != null)
+				AvisarVidrio("Solo con el auto detenido en rojo.");
+			else
+				AvisarVidrio("Apuntá al vidrio de un auto detenido en rojo.");
+			return;
+		}
+		if (GlobalPosition.DistanceTo(auto.GlobalPosition) > RangoVidrio) { AvisarVidrio("Acercate más al auto."); return; }
+		if (auto.VidrioRoto) { AvisarVidrio("Ese vidrio ya está roto."); return; }
+		// Se rompe el vidrio apuntado (el rayo manda, no el cuerpo).
+		// (origen y dir ya vienen del mouse o del centro según el caso)
+		auto.RomperVidrio(origen, dir);
+		Audio?.Play("vidrio");
+		Rig?.Punch(0.3f);
+		foreach (var p in GetTree().GetNodesInGroup("patrulla"))
+		{
+			if (p is PatrolAI poli && IsInstanceValid(poli))
+			{
+				poli.Alertar(alertaVidrioRoto);
+				break;
+			}
+		}
 	}
 
 	void IntentarTrabajar()
